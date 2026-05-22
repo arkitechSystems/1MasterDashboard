@@ -1,0 +1,30 @@
+services:
+  # Backend API Service
+  - type: web
+    name: cchddash-api
+    env: node
+    plan: free
+    buildCommand: cd server && npm install --production=false && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3005
+      - key: MASTER_ADMIN_USERNAME
+        sync: false
+      - key: MASTER_ADMIN_PASSWORD
+        sync: false
+
+  # Frontend React App
+  - type: web
+    name: cchddash-frontend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s build -p $PORT
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://cchddash-api.onrender.com

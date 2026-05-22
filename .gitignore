@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Build output
+build/
+server/dist/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+server/.env
+server/.env.local
+server/.env.*.local
+
+# Local tooling
+.claude/
+
+# SSL certificates / keys
+server/certs/
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+
+# Local databases & data files (must NOT be committed — contains client data)
+server/database.sqlite
+server/database.sqlite-journal
+server/data/
+server/auditlog.txt
+
+# GL Data — served from protected API, not bundled in public
+public/gldet.json
+public/gldet-metadata.json
+
+# Reports / sensitive HTML artifacts
+security-audit-report.html
+
+# Stale backup files (delete from disk, do not version)
+*.backup
+*.backup2
+*.bak
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
