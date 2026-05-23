@@ -6,6 +6,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { sendSupportTicket } from './emailService';
+import { tenant } from './tenantConfig';
 
 dotenv.config();
 
@@ -17,8 +18,9 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://localhost:3000',
   'http://localhost:3174',
-  'https://connect301.arkitech-test.xyz',
-  'https://cchddash-frontend.onrender.com'
+  'https://1masterdashboard-frontend.onrender.com',
+  'https://1masterdashboard-demo-frontend.onrender.com',
+  'https://demo.arkitechsystems.com',
 ];
 
 app.use(cors({
@@ -41,6 +43,10 @@ app.use((req: Request, res: Response, next) => {
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/tenant', (req: Request, res: Response) => {
+  res.json({ id: tenant.id, name: tenant.name });
 });
 
 app.post('/api/tickets/submit', async (req: Request, res: Response) => {
@@ -66,7 +72,7 @@ app.post('/api/tickets/submit', async (req: Request, res: Response) => {
 
 app.get('/api/gl-data', async (req: Request, res: Response) => {
   try {
-    const glDataPath = path.join(__dirname, '..', 'data', 'gldet.json');
+    const glDataPath = tenant.glDataFile;
 
     if (!fs.existsSync(glDataPath)) {
       console.error('GL data file not found at:', glDataPath);
@@ -83,7 +89,7 @@ app.get('/api/gl-data', async (req: Request, res: Response) => {
 
 app.get('/api/gl-metadata', async (req: Request, res: Response) => {
   try {
-    const glDataPath = path.join(__dirname, '..', 'data', 'gldet.json');
+    const glDataPath = tenant.glDataFile;
 
     if (!fs.existsSync(glDataPath)) {
       console.error('GL data file not found at:', glDataPath);
@@ -104,7 +110,7 @@ app.get('/api/gl-metadata', async (req: Request, res: Response) => {
 
 app.get('/api/available-months', async (req: Request, res: Response) => {
   try {
-    const glDataPath = path.join(__dirname, '..', 'data', 'gldet.json');
+    const glDataPath = tenant.glDataFile;
     const rawData = fs.readFileSync(glDataPath, 'utf-8');
     const glData = JSON.parse(rawData);
 
@@ -160,7 +166,7 @@ const startServer = () => {
     });
   } else {
     http.createServer(app).listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT} (tenant: ${tenant.id})`);
       console.log(`Health check: http://localhost:${PORT}/api/health`);
     });
   }

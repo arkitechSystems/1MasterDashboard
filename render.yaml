@@ -1,5 +1,5 @@
 services:
-  # Backend API Service
+  # ─────────── Default / Master ───────────
   - type: web
     name: 1masterdashboard-api
     env: node
@@ -11,8 +11,9 @@ services:
         value: production
       - key: PORT
         value: 3001
+      - key: TENANT_ID
+        value: default
 
-  # Frontend
   - type: web
     name: 1masterdashboard-frontend
     env: node
@@ -22,3 +23,30 @@ services:
     envVars:
       - key: REACT_APP_API_URL
         value: https://1masterdashboard-api.onrender.com
+
+  # ─────────── Demo Tenant ───────────
+  - type: web
+    name: 1masterdashboard-demo-api
+    env: node
+    plan: free
+    buildCommand: cd server && npm install --production=false && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: TENANT_ID
+        value: demo
+
+  - type: web
+    name: 1masterdashboard-demo-frontend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s build -p $PORT
+    domains:
+      - demo.arkitechsystems.com
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://1masterdashboard-demo-api.onrender.com
