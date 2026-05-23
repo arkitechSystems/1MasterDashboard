@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { API_ENDPOINTS } from '../config';
 
-type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket' | 'trended-is2';
+type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket';
 
 interface SearchResult {
   label: string;
@@ -27,8 +26,7 @@ interface Notification {
 }
 
 const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSidebar, currentView = 'dashboard', onViewChange }) => {
-  const { logout, username } = useAuth();
-  const userName = username || "Current User";
+  const userName = "Admin";
   const userTitle = "CFO";
   const [searchQuery, setSearchQuery] = useState('');
   const [lastRefreshDate, setLastRefreshDate] = useState<string>('Loading...');
@@ -88,13 +86,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
   const handleSubmitTicket = () => {
     console.log('Navigate to Submit a Ticket');
     onPageChange?.('submit-ticket' as PageType);
-  };
-
-  const handleLogout = () => {
-    console.log('Logging out...');
-    setSearchQuery('');
-    setShowResults(false);
-    logout();
   };
 
   const handleNotificationClick = (notificationId: number) => {
@@ -225,7 +216,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
     { label: 'Pro Forma', type: 'navigation', action: () => onPageChange?.('pro-forma' as PageType) },
     { label: 'Upcoming Modules', type: 'navigation', action: () => onPageChange?.('upcoming-modules' as PageType) },
     { label: 'My Account', type: 'action', action: handleMyAccount },
-    { label: 'Log Out', type: 'action', action: handleLogout },
   ];
 
   // Filter search results based on query
@@ -535,10 +525,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
               <div className="dropdown-item" onClick={handleSubmitTicket}>
                 <span className="material-icons">support</span>
                 <span>Submit a Ticket</span>
-              </div>
-              <div className="dropdown-item" onClick={handleLogout}>
-                <span className="material-icons">logout</span>
-                <span>Log Out</span>
               </div>
             </div>
           </div>

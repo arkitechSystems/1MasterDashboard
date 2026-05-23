@@ -37,8 +37,7 @@
     "server:build": "cd server && npm run build",
     "server:start": "cd server && npm start",
     "update-metadata": "node update-metadata.js",
-    "watch-gldet": "node watch-gldet.js",
-    "generate-certs": "node generate-certificates.js"
+    "watch-gldet": "node watch-gldet.js"
   },
   "eslintConfig": {
     "extends": [

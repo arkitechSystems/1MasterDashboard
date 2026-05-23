@@ -1,6 +1,6 @@
 import React from 'react';
 
-type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket' | 'trended-is2';
+type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket';
 
 interface SidebarProps {
   currentPage: PageType;
@@ -23,7 +23,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, collapsed,
     { page: 'balance-trend' as PageType, icon: 'account_balance', label: 'Balance Sheet Trend' },
     { page: 'balance-activity' as PageType, icon: 'insights', label: 'Balance Sheet Activity' },
     { page: 'gl-transactions' as PageType, icon: 'receipt_long', label: 'GL Transactions' },
-    { page: 'trended-is2' as PageType, icon: 'bar_chart', label: 'Trended IS2' },
   ];
 
   const navItemsAfterAI = [

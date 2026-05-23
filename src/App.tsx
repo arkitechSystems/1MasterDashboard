@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { SettingsProvider } from './contexts/SettingsContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Login from './components/Login';
-import FirstLoginPasswordReset from './components/FirstLoginPasswordReset';
-import MandatoryMFASetup from './components/MandatoryMFASetup';
-import Screensaver from './components/Screensaver';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import AccountingSidebar from './components/AccountingSidebar';
@@ -28,40 +23,31 @@ import ProjectionsImp from './components/ProjectionsImp';
 import MyAccount from './components/MyAccount';
 import MonthlyReportOptions from './components/MonthlyReportOptions';
 import SubmitTicket from './components/SubmitTicket';
-import TrendedIS2 from './components/TrendedIS2';
 import HiddenLinks from './components/HiddenLinks';
-import { API_ENDPOINTS } from './config';
 
-type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket' | 'trended-is2';
+type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket';
 
 type AccountingPageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'reconciliations' | 'chart-of-accounts';
 
 function AppContent() {
-  const { isAuthenticated, firstLogin, passwordResetRequired, completeFirstLogin, showScreensaver, dismissScreensaver } = useAuth();
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
   const [currentView, setCurrentView] = useState<'dashboard' | 'accounting'>('dashboard');
   const [accountingPage, setAccountingPage] = useState<AccountingPageType>('close-checklist');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [showHiddenLinks, setShowHiddenLinks] = useState(false);
-  const [passwordResetComplete, setPasswordResetComplete] = useState(false);
-  const [mfaSetupComplete, setMfaSetupComplete] = useState(false);
 
-  // Keyboard shortcut handler for Ctrl+H+M
   useEffect(() => {
-    if (!isAuthenticated || showScreensaver) return;
-
     const keysPressed = new Set<string>();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!event.key) return;
       keysPressed.add(event.key.toLowerCase());
 
-      // Check if Ctrl + H + M are all pressed
       if (event.ctrlKey && keysPressed.has('h') && keysPressed.has('m')) {
         event.preventDefault();
         setShowHiddenLinks((prev) => !prev);
-        keysPressed.clear(); // Clear after triggering
+        keysPressed.clear();
       }
     };
 
@@ -77,45 +63,7 @@ function AppContent() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isAuthenticated, showScreensaver]);
-
-  // Show login page if not authenticated
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
-  // Handle first login flow
-  if (firstLogin && passwordResetRequired && !passwordResetComplete) {
-    return (
-      <FirstLoginPasswordReset
-        onComplete={() => setPasswordResetComplete(true)}
-      />
-    );
-  }
-
-  // After password reset, require MFA setup
-  if (firstLogin && passwordResetComplete && !mfaSetupComplete) {
-    return (
-      <MandatoryMFASetup
-        onComplete={async () => {
-          setMfaSetupComplete(true);
-          // Mark first login as complete
-          const token = localStorage.getItem('authToken');
-          try {
-            await fetch(`${API_ENDPOINTS.BASE_URL}/api/auth/complete-first-login`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            completeFirstLogin();
-          } catch (error) {
-            console.error('Failed to complete first login:', error);
-          }
-        }}
-      />
-    );
-  }
+  }, []);
 
   const renderContent = () => {
     switch (currentPage) {
@@ -153,8 +101,6 @@ function AppContent() {
         return <MonthlyReportOptions />;
       case 'submit-ticket':
         return <SubmitTicket />;
-      case 'trended-is2':
-        return <TrendedIS2 />;
       default:
         return <Dashboard />;
     }
@@ -195,37 +141,25 @@ function AppContent() {
         </footer>
       </main>
 
-      {/* AI Chat Window */}
       {showAIChat && (
         <AIChatWindow onClose={() => setShowAIChat(false)} />
       )}
 
-      {/* Hidden Links Modal */}
       {showHiddenLinks && (
         <HiddenLinks
           onPageChange={setCurrentPage}
           onClose={() => setShowHiddenLinks(false)}
         />
       )}
-
-      {/* Screensaver */}
-      {showScreensaver && (
-        <Screensaver
-          onDismiss={dismissScreensaver}
-        />
-      )}
     </div>
   );
 }
 
-// Main App component with authentication
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <SettingsProvider>
-        <AppContent />
-      </SettingsProvider>
-    </AuthProvider>
+    <SettingsProvider>
+      <AppContent />
+    </SettingsProvider>
   );
 };
 

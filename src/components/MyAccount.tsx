@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import MFASetup from './MFASetup';
 import { API_ENDPOINTS } from '../config';
 
 const MyAccount: React.FC = () => {
-  const { mfaEnabled: authMfaEnabled } = useAuth();
   const [formData, setFormData] = useState({
     firstName: 'Current',
     lastName: 'User',
@@ -488,13 +485,6 @@ const MyAccount: React.FC = () => {
         </div>
       )}
 
-      {/* MFA Setup Modal */}
-      {showMFASetup && (
-        <MFASetup
-          onComplete={handleMFASetupComplete}
-          onCancel={() => setShowMFASetup(false)}
-        />
-      )}
     </div>
   );
 };

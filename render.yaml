@@ -1,7 +1,7 @@
 services:
   # Backend API Service
   - type: web
-    name: cchddash-api
+    name: 1masterdashboard-api
     env: node
     plan: free
     buildCommand: cd server && npm install --production=false && npm run build
@@ -9,22 +9,16 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: JWT_SECRET
-        generateValue: true
       - key: PORT
-        value: 3005
-      - key: MASTER_ADMIN_USERNAME
-        sync: false
-      - key: MASTER_ADMIN_PASSWORD
-        sync: false
+        value: 3001
 
-  # Frontend React App
+  # Frontend
   - type: web
-    name: cchddash-frontend
+    name: 1masterdashboard-frontend
     env: node
     plan: free
     buildCommand: npm install && npm run build
     startCommand: npx serve -s build -p $PORT
     envVars:
       - key: REACT_APP_API_URL
-        value: https://cchddash-api.onrender.com
+        value: https://1masterdashboard-api.onrender.com
