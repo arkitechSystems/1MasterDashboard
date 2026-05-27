@@ -1,7 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import ProposedEntry from './ProposedEntry';
 
 const ImpactPreview: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [view, setView] = useState<'main' | 'proposed-entry'>('main');
 
   const handleDownloadTemplate = () => {
     // Placeholder for download template functionality
@@ -25,6 +27,14 @@ const ImpactPreview: React.FC = () => {
       event.target.value = '';
     }
   };
+
+  const handleProposedEntry = () => {
+    setView('proposed-entry');
+  };
+
+  if (view === 'proposed-entry') {
+    return <ProposedEntry onBack={() => setView('main')} />;
+  }
 
   return (
     <div className="impact-preview">
@@ -117,6 +127,37 @@ const ImpactPreview: React.FC = () => {
           >
             <span className="material-icons" style={{ fontSize: '20px' }}>upload</span>
             <span>Upload Entry</span>
+          </button>
+
+          <button
+            onClick={handleProposedEntry}
+            style={{
+              background: 'linear-gradient(145deg, #1abc9c, #16a085)',
+              color: '#fff',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(26, 188, 156, 0.3)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+            }}
+          >
+            <span className="material-icons" style={{ fontSize: '20px' }}>edit_note</span>
+            <span>Proposed Entry</span>
           </button>
 
           {/* Hidden file input */}

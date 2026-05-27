@@ -5,6 +5,7 @@ import autoTable from 'jspdf-autotable';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAvailableMonths } from '../hooks/useAvailableMonths';
 import { API_ENDPOINTS } from '../config';
+import { assignTxIds } from '../services/glTransactions';
 
 interface GLRecord {
   " glj_amt ": number | string;
@@ -101,7 +102,7 @@ const MDA: React.FC = () => {
           throw new Error(`Failed to load data: ${response.status}`);
         }
 
-        const rawData: GLRecord[] = await response.json();
+        const rawData = assignTxIds<GLRecord>(await response.json());
 
         // Extract unique departments only on first load
         if (departments.length === 0) {

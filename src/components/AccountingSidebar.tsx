@@ -1,6 +1,6 @@
 import React from 'react';
 
-type PageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'reconciliations' | 'chart-of-accounts';
+type PageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'bank-recon' | 'reconciliations' | 'chart-of-accounts';
 
 interface AccountingSidebarProps {
   currentPage: PageType;
@@ -19,6 +19,7 @@ const AccountingSidebar: React.FC<AccountingSidebarProps> = ({
     { page: 'close-checklist' as PageType, icon: 'checklist', label: 'Close Checklist' },
     { page: 'journal-entries' as PageType, icon: 'receipt_long', label: 'Journal Entries' },
     { page: 'recon-checklist' as PageType, icon: 'fact_check', label: 'Recon Checklist' },
+    { page: 'bank-recon' as PageType, icon: 'account_balance_wallet', label: 'Bank Recon' },
     { page: 'reconciliations' as PageType, icon: 'account_balance', label: 'Reconciliations' },
     { page: 'chart-of-accounts' as PageType, icon: 'account_tree', label: 'Chart of Accounts' },
   ];

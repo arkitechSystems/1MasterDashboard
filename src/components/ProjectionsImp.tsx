@@ -6,6 +6,7 @@ import { DataGrid, GridColDef, GridRowsProp } from '@mui/x-data-grid';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAvailableMonths } from '../hooks/useAvailableMonths';
 import { API_ENDPOINTS } from '../config';
+import { assignTxIds } from '../services/glTransactions';
 
 interface GLRecord {
   " glj_amt ": number | string;
@@ -217,7 +218,7 @@ const ProjectionsImp: React.FC = () => {
           throw new Error(`Failed to load data: ${response.status}`);
         }
 
-        const rawData: GLRecord[] = await response.json();
+        const rawData = assignTxIds<GLRecord>(await response.json());
 
         // Get the date range - from first available month to selected end month
         const selectedMonthData = availableMonths.find(m => m.value === selectedEndMonth);

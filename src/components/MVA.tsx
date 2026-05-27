@@ -6,6 +6,7 @@ import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAvailableMonths } from '../hooks/useAvailableMonths';
 import { API_ENDPOINTS } from '../config';
+import { assignTxIds } from '../services/glTransactions';
 
 interface GLRecord {
   " glj_amt ": number | string;
@@ -578,7 +579,7 @@ const MVA: React.FC = () => {
           throw new Error(`Failed to load data: ${response.status}`);
         }
 
-        const rawData: GLRecord[] = await response.json();
+        const rawData = assignTxIds<GLRecord>(await response.json());
 
         // Get unique subgroups for dropdown (exclude Type 1 and 2)
         const filteredRecords = rawData.filter(record => {

@@ -2,6 +2,7 @@
   "name": "willdash-react",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://arkitechsystems.github.io/1MasterDashboard",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -22,6 +23,7 @@
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-plaid-link": "^4.1.1",
     "react-scripts": "5.0.1",
     "recharts": "^3.2.1",
     "typescript": "^4.9.5",
@@ -37,7 +39,10 @@
     "server:build": "cd server && npm run build",
     "server:start": "cd server && npm start",
     "update-metadata": "node update-metadata.js",
-    "watch-gldet": "node watch-gldet.js"
+    "watch-gldet": "node watch-gldet.js",
+    "prepare-static-data": "node scripts/prepare-static-data.js",
+    "predeploy": "npm run prepare-static-data && npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -58,6 +63,7 @@
     ]
   },
   "devDependencies": {
-    "chokidar": "^4.0.3"
+    "chokidar": "^4.0.3",
+    "gh-pages": "^6.3.0"
   }
 }

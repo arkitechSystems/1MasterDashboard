@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { API_ENDPOINTS } from '../config';
+import { assignTxIds } from '../services/glTransactions';
 import {
   BarChart,
   Bar,
@@ -209,7 +210,7 @@ const Dashboard: React.FC = () => {
           throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
         }
 
-        const rawData: GLRecord[] = await response.json();
+        const rawData = assignTxIds<GLRecord>(await response.json());
 
         if (!Array.isArray(rawData) || rawData.length === 0) {
           throw new Error('Invalid or empty data received');
@@ -363,7 +364,7 @@ const Dashboard: React.FC = () => {
           throw new Error(`Failed to load trend data: ${response.status} ${response.statusText}`);
         }
 
-        const rawData: GLRecord[] = await response.json();
+        const rawData = assignTxIds<GLRecord>(await response.json());
 
         if (!Array.isArray(rawData) || rawData.length === 0) {
           throw new Error('Invalid or empty trend data received');

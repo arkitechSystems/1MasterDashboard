@@ -23,11 +23,13 @@ import ProjectionsImp from './components/ProjectionsImp';
 import MyAccount from './components/MyAccount';
 import MonthlyReportOptions from './components/MonthlyReportOptions';
 import SubmitTicket from './components/SubmitTicket';
+import Admin from './components/Admin';
+import Questionnaire from './components/Questionnaire';
 import HiddenLinks from './components/HiddenLinks';
 
-type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket';
+type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket' | 'admin' | 'questionnaire';
 
-type AccountingPageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'reconciliations' | 'chart-of-accounts';
+type AccountingPageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'bank-recon' | 'reconciliations' | 'chart-of-accounts';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
@@ -101,6 +103,10 @@ function AppContent() {
         return <MonthlyReportOptions />;
       case 'submit-ticket':
         return <SubmitTicket />;
+      case 'admin':
+        return <Admin />;
+      case 'questionnaire':
+        return <Questionnaire />;
       default:
         return <Dashboard />;
     }
@@ -135,7 +141,7 @@ function AppContent() {
       />
 
       <main className="content">
-        {currentView === 'dashboard' ? renderContent() : <AccountingView />}
+        {currentView === 'dashboard' ? renderContent() : <AccountingView currentPage={accountingPage} />}
         <footer className="app-footer">
           <p>Developed by ArkiTech Systems © {new Date().getFullYear()}</p>
         </footer>

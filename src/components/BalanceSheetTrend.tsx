@@ -5,6 +5,7 @@ import autoTable from 'jspdf-autotable';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAvailableMonths } from '../hooks/useAvailableMonths';
 import { API_ENDPOINTS } from '../config';
+import { assignTxIds } from '../services/glTransactions';
 
 interface GLRecord {
   " glj_amt ": number | string;
@@ -184,7 +185,7 @@ const BalanceSheetTrend: React.FC = () => {
           throw new Error(`Failed to load data: ${response.status}`);
         }
 
-        const rawData: GLRecord[] = await response.json();
+        const rawData = assignTxIds<GLRecord>(await response.json());
 
         // Get the date range based on selected end month
         const { startSerial, endSerial } = getDateRange(selectedEndMonth);

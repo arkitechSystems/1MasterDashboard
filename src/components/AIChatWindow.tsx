@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { prepareFinancialContext } from '../utils/aiDataContext';
 import { getApiUrl, API_ENDPOINTS } from '../config';
+import { assignTxIds } from '../services/glTransactions';
 
 interface Message {
   id: string;
@@ -56,7 +57,7 @@ const AIChatWindow: React.FC<AIChatWindowProps> = ({ onClose }) => {
           throw new Error(`Failed to load data: ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = assignTxIds(await response.json());
         setGldetData(data);
         console.log('Loaded financial data:', data.length, 'entries');
       } catch (error) {

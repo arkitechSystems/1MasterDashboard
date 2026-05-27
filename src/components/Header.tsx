@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../config';
 
-type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket';
+type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket' | 'admin' | 'questionnaire';
 
 interface SearchResult {
   label: string;
@@ -60,6 +60,20 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  const [displayedView, setDisplayedView] = useState<'dashboard' | 'accounting'>(currentView);
+  const [titleCollapsed, setTitleCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (currentView === displayedView) return;
+    setTitleCollapsed(true);
+    const swap = window.setTimeout(() => {
+      setDisplayedView(currentView);
+      // next frame, release the collapse so the new title expands
+      window.requestAnimationFrame(() => setTitleCollapsed(false));
+    }, 220);
+    return () => window.clearTimeout(swap);
+  }, [currentView, displayedView]);
+
   // Get initials from name
   const getInitials = (name: string) => {
     return name
@@ -86,6 +100,15 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
   const handleSubmitTicket = () => {
     console.log('Navigate to Submit a Ticket');
     onPageChange?.('submit-ticket' as PageType);
+  };
+
+  const handleAdmin = () => {
+    console.log('Navigate to Admin');
+    onPageChange?.('admin' as PageType);
+  };
+
+  const handleQuestionnaire = () => {
+    onPageChange?.('questionnaire' as PageType);
   };
 
   const handleNotificationClick = (notificationId: number) => {
@@ -243,7 +266,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
       <div className="header-content">
         <div className="header-left">
           <img
-            src="/ArkiTech.png"
+            src={`${process.env.PUBLIC_URL}/ArkiTech.png`}
             alt="ArkiTech Logo"
             className="header-logo"
             title="Developed by ArkiTech Systems © 2025"
@@ -251,10 +274,24 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
               e.currentTarget.style.display = 'none';
             }}
           />
-          <h1 className="header-title">Financial Dashboard</h1>
-          <div className="header-search-wrapper">
+          <h1 className={`header-title ${titleCollapsed ? 'collapsed' : ''}`}>
+            <span className="header-title-inner">
+              {displayedView === 'accounting' ? 'Accounting Dashboard' : 'Financial Dashboard'}
+            </span>
+          </h1>
+          <div className={`header-search-wrapper ${searchQuery ? 'has-text' : ''}`}>
             <form className="header-search" onSubmit={handleSearch}>
-              <span className="material-icons search-icon">search</span>
+              <button
+                type="button"
+                className="search-icon-btn"
+                aria-label="Focus search"
+                onClick={() => {
+                  const el = document.querySelector<HTMLInputElement>('.search-input');
+                  el?.focus();
+                }}
+              >
+                <span className="material-icons">search</span>
+              </button>
               <input
                 type="text"
                 className="search-input"
@@ -525,6 +562,14 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
               <div className="dropdown-item" onClick={handleSubmitTicket}>
                 <span className="material-icons">support</span>
                 <span>Submit a Ticket</span>
+              </div>
+              <div className="dropdown-item" onClick={handleAdmin}>
+                <span className="material-icons">admin_panel_settings</span>
+                <span>Setup</span>
+              </div>
+              <div className="dropdown-item" onClick={handleQuestionnaire}>
+                <span className="material-icons">fact_check</span>
+                <span>Questionnaire</span>
               </div>
             </div>
           </div>

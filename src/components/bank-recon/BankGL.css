@@ -1,0 +1,245 @@
+/* Bank/GL reconciliation page — page-specific design.
+   Shared bits (panel, recon-table, .amt, .mono/.muted/.faint, .journal-pill,
+   matched/unmatched row indicators) live in ../BankRecon.css under the
+   .bank-recon scope and cascade down to this page automatically. */
+
+.bank-gl-page {
+  --bg-surface:   #ffffff;
+  --bg-surface-2: #f4f7fb;
+  --ink:          #222;
+  --muted:        #6c7a87;
+  --faint:        #9aa6b2;
+  --line:         #e5ebf2;
+  --line-2:       #eef2f7;
+
+  --accent:       #1abc9c;
+  --accent-2:     #16a085;
+  --accent-bg:    #e8f8f4;
+
+  --pos:          #16a085;
+  --neg:          #e74c3c;
+  --neg-bg:       #fdecea;
+
+  --r-lg: 10px;
+
+  font-size: 13px;
+  color: var(--ink);
+  padding-bottom: 16px;
+}
+
+/* ─── Top status strip (bank/gl/variance/progress) ─── */
+.bank-gl-page .recon-status {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  margin-bottom: 14px;
+  box-shadow: 0 1px 0 rgba(15, 32, 39, 0.02);
+  flex-wrap: wrap;
+}
+.bank-gl-page .rs-item { display: flex; flex-direction: column; gap: 2px; }
+.bank-gl-page .rs-k {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  font-weight: 600;
+}
+.bank-gl-page .rs-v {
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.bank-gl-page .rs-v.pos { color: var(--pos); }
+.bank-gl-page .rs-v.neg { color: var(--neg); }
+.bank-gl-page .rs-arrow {
+  color: var(--faint);
+  font-size: 18px !important;
+}
+.bank-gl-page .rs-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--line);
+}
+.bank-gl-page .rs-spacer { flex: 1; }
+.bank-gl-page .rs-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 160px;
+}
+.bank-gl-page .rs-bar {
+  width: 120px;
+  height: 6px;
+  background: var(--bg-surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.bank-gl-page .rs-bar > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 3px;
+  transition: width 200ms ease;
+}
+.bank-gl-page .rs-pct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Match-filter chip ─── */
+.bank-gl-page .match-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  background: var(--accent-bg);
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
+  border-radius: 999px;
+  color: var(--accent-2);
+  font-size: 12.5px;
+  margin-bottom: 12px;
+}
+.bank-gl-page .match-filter-chip strong { color: var(--ink); }
+.bank-gl-page .match-filter-chip .clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
+  background: var(--bg-surface);
+  border-radius: 999px;
+  color: var(--accent-2);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.bank-gl-page .match-filter-chip .clear:hover { background: var(--accent-bg); }
+
+/* ─── Toolbar ─── */
+.bank-gl-page .recon-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.bank-gl-page .rt-left,
+.bank-gl-page .rt-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bank-gl-page .rt-msg {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ─── 2-column Bank/GL grid ─── */
+.bank-gl-page .recon-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 1280px) {
+  .bank-gl-page .recon-grid { grid-template-columns: 1fr; }
+}
+
+/* The table-wrap inside the BankGL panels is shorter so both panels
+   fit side-by-side without forcing the page to scroll. */
+.bank-gl-page .recon-table-wrap { max-height: 60vh; }
+
+/* ─── Match chip + numeric input ─── */
+.bank-gl-page .match-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 2px;
+  border-radius: 999px;
+}
+.bank-gl-page .match-chip.set { background: var(--accent-bg); }
+.bank-gl-page .match-chip.none {
+  background: transparent;
+  border: 1px dashed var(--line);
+}
+.bank-gl-page .match-input {
+  width: 44px;
+  height: 24px;
+  padding: 0 6px;
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: center;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--muted);
+  -moz-appearance: textfield;
+}
+.bank-gl-page .match-input.matched { color: inherit; }
+.bank-gl-page .match-input::-webkit-outer-spin-button,
+.bank-gl-page .match-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.bank-gl-page .match-input:focus {
+  background: var(--bg-surface);
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+/* ─── Legend ─── */
+.bank-gl-page .recon-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  font-size: 11.5px;
+  color: var(--muted);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.bank-gl-page .rl-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.bank-gl-page .rl-hint {
+  font-style: italic;
+  color: var(--muted);
+}
+.bank-gl-page .legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.bank-gl-page .legend-swatch.matched-sw {
+  background: color-mix(in oklab, var(--pos) 45%, transparent);
+}
+.bank-gl-page .legend-swatch.unmatched-sw {
+  background: color-mix(in oklab, var(--neg) 45%, transparent);
+}
+.bank-gl-page .legend-swatch.chip-sw {
+  background: var(--accent-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 25%, transparent);
+}
