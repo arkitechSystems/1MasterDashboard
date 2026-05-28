@@ -7,6 +7,7 @@ import Matches from './bank-recon/Matches';
 import BankGL from './bank-recon/BankGL';
 import Balances from './bank-recon/Balances';
 import Upload from './bank-recon/Upload';
+import AiRecon from './bank-recon/AiRecon';
 import ConnectToBankButton from './bank-recon/ConnectToBankButton';
 import './BankRecon.css';
 import {
@@ -22,7 +23,13 @@ import {
   formatAmount,
 } from './bank-recon/data';
 
-type BankReconTab = 'reconciliation' | 'matches' | 'bank-gl' | 'upload' | 'balances';
+type BankReconTab =
+  | 'reconciliation'
+  | 'matches'
+  | 'bank-gl'
+  | 'upload'
+  | 'balances'
+  | 'ai-recon';
 
 const TABS: { id: BankReconTab; label: string; icon: string }[] = [
   { id: 'reconciliation', label: 'Reconciliation', icon: 'verified' },
@@ -30,6 +37,7 @@ const TABS: { id: BankReconTab; label: string; icon: string }[] = [
   { id: 'bank-gl',        label: 'Bank/GL',        icon: 'compare_arrows' },
   { id: 'balances',       label: 'Balances',       icon: 'account_balance' },
   { id: 'upload',         label: 'Upload',         icon: 'upload_file' },
+  { id: 'ai-recon',       label: 'AI Recon',       icon: 'auto_awesome' },
 ];
 
 const BankRecon: React.FC = () => {
@@ -592,6 +600,8 @@ const BankRecon: React.FC = () => {
             setGlBalances={setGlBalances}
           />
         );
+      case 'ai-recon':
+        return <AiRecon selectedMonth={selectedMonth} />;
       default:
         return null;
     }

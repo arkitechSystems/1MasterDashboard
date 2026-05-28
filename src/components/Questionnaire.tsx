@@ -117,7 +117,7 @@ const SOURCE_COLS: { key: SourceKey; label: string; short: string }[] = [
   {
     key: 'trialBalance',
     label: 'Trial balance with beginning balances for all balance sheet accounts',
-    short: 'Trial Balance',
+    short: 'Beg Trial Balance',
   },
   { key: 'deptList', label: 'Departmental List', short: 'Dept List' },
   {

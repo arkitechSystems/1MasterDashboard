@@ -29,7 +29,7 @@ import HiddenLinks from './components/HiddenLinks';
 
 type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket' | 'admin' | 'questionnaire';
 
-type AccountingPageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'bank-recon' | 'reconciliations' | 'chart-of-accounts';
+type AccountingPageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'cash-summary' | 'bank-recon' | 'reconciliations' | 'cost-report' | '990';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');

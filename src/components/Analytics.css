@@ -1,0 +1,186 @@
+/* ─────────────────────────────────────────────
+   Analytics page (FTE / Supplies analysis)
+   ───────────────────────────────────────────── */
+.analytics-page {
+  --an-surface:   #ffffff;
+  --an-surface-2: #f4f7fb;
+  --an-ink:       #222;
+  --an-ink-2:     #3a4a55;
+  --an-muted:     #6c7a87;
+  --an-faint:     #9aa6b2;
+  --an-line:      #e5ebf2;
+  --an-line-2:    #eef2f7;
+  --an-accent:    #1abc9c;
+  --an-accent-2:  #16a085;
+  --an-accent-bg: #e8f8f4;
+  --an-pos:       #16a085;
+  --an-neg:       #e74c3c;
+
+  padding: 12px 28px 64px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--an-ink);
+}
+
+.analytics-head { margin-bottom: 12px; }
+.analytics-head h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.analytics-sub {
+  font-size: 12.5px;
+  color: var(--an-muted);
+  margin-top: 4px;
+  max-width: 820px;
+  line-height: 1.5;
+}
+
+/* Tabs */
+.analytics-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--an-line);
+  margin-bottom: 14px;
+}
+.analytics-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 12px;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--an-muted);
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+  border-radius: 6px 6px 0 0;
+}
+.analytics-tab .material-icons { font-size: 17px; opacity: 0.85; }
+.analytics-tab:hover {
+  color: var(--an-ink);
+  background: var(--an-surface-2);
+}
+.analytics-tab.active { color: var(--an-accent); font-weight: 600; }
+.analytics-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 10px; right: 10px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--an-accent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Toolbar above the table */
+.analytics-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.analytics-hint {
+  font-size: 12.5px;
+  color: var(--an-muted);
+}
+.analytics-hint strong { color: var(--an-ink); font-weight: 600; }
+
+.seg-toggle {
+  display: inline-flex;
+  border: 1px solid var(--an-line);
+  background: var(--an-surface);
+  border-radius: 8px;
+  padding: 2px;
+  height: 32px;
+}
+.seg-toggle button {
+  border: none;
+  background: transparent;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--an-muted);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.seg-toggle button:hover { color: var(--an-ink); }
+.seg-toggle button.on {
+  background: var(--an-accent-bg);
+  color: var(--an-accent-2);
+  font-weight: 600;
+}
+
+/* Main card + table */
+.analytics-card {
+  background: var(--an-surface);
+  border: 1px solid var(--an-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.analytics-table-wrap { overflow-x: auto; }
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.analytics-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--an-surface-2);
+  text-align: left;
+  font-weight: 500;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--an-muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--an-line);
+  white-space: nowrap;
+}
+.analytics-table thead th.r { text-align: right; }
+.analytics-table thead th.latest { color: var(--an-accent-2); }
+.analytics-table tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--an-line-2);
+  color: var(--an-ink);
+  white-space: nowrap;
+}
+.analytics-table tbody td.r { text-align: right; }
+.analytics-table tbody td.mono { font-variant-numeric: tabular-nums; }
+.analytics-table tbody td.muted { color: var(--an-muted); }
+.analytics-table tbody td.strong { font-weight: 600; }
+.analytics-table tbody td.latest { background: rgba(26, 188, 156, 0.06); }
+.analytics-table tbody td.pos { color: var(--an-pos); }
+.analytics-table tbody td.neg { color: var(--an-neg); }
+.analytics-table tbody tr:hover td { background: #f0faf6; }
+.analytics-table tbody tr:last-child td { border-bottom: none; }
+
+.dept-name { font-weight: 600; color: var(--an-ink); }
+.dept-code {
+  font-size: 11px;
+  color: var(--an-faint);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.analytics-foot-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--an-surface);
+  border: 1px solid var(--an-line);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--an-ink-2);
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.analytics-foot-note strong { color: var(--an-ink); font-weight: 600; }

@@ -1,0 +1,310 @@
+/* ─────────────────────────────────────────────
+   Form 990 page styling. Scoped under
+   .form990-page so it doesn't leak.
+   ───────────────────────────────────────────── */
+
+.form990-page .f990-card { padding: 0; overflow: hidden; }
+
+.form990-page .f990-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ap-line);
+  background: var(--ap-surface-2);
+  font-size: 11.5px;
+  color: var(--ap-muted);
+}
+.form990-page .f990-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.form990-page .f990-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+.form990-page .f990-swatch.manual {
+  background: #dfeaff;
+  border-color: #93b4f0;
+}
+.form990-page .f990-swatch.financial {
+  background: #dff5e3;
+  border-color: #8bcc9c;
+}
+.form990-page .f990-swatch.computed {
+  background: var(--ap-surface);
+  border-color: var(--ap-line);
+}
+
+/* ── Data input table ─────────────────────── */
+.form990-page .f990-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.form990-page .f990-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--ap-surface-2);
+  text-align: left;
+  font-weight: 500;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ap-muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ap-line);
+}
+.form990-page .f990-table thead th.c { text-align: center; }
+.form990-page .f990-table tbody td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--ap-line-2);
+  color: var(--ap-ink);
+  vertical-align: middle;
+}
+.form990-page .f990-table td.mono { font-variant-numeric: tabular-nums; }
+.form990-page .f990-table td.muted { color: var(--ap-muted); }
+
+.form990-page .f990-section-row td {
+  background: var(--ap-surface-2);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ap-ink-2);
+  border-top: 1px solid var(--ap-line);
+  border-bottom: 1px solid var(--ap-line);
+  padding: 10px 12px;
+}
+.form990-page .f990-section-title { color: var(--ap-muted); text-transform: none; letter-spacing: 0; }
+
+.form990-page .f990-cell {
+  padding: 4px 8px !important;
+  vertical-align: middle;
+}
+.form990-page .f990-cell.empty { background: var(--ap-surface); }
+.form990-page .f990-cell.manual {
+  background: #eaf1ff;
+  border-left: 1px solid #c2d5fb;
+  border-right: 1px solid #c2d5fb;
+}
+.form990-page .f990-cell.financial {
+  background: #e8f8ec;
+  border-left: 1px solid #b8e3c3;
+  border-right: 1px solid #b8e3c3;
+}
+.form990-page .f990-cell.computed {
+  background: var(--ap-surface);
+}
+
+.form990-page .f990-input {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--ap-ink);
+  outline: none;
+}
+.form990-page .f990-input.number { text-align: right; font-variant-numeric: tabular-nums; }
+.form990-page .f990-input:hover {
+  background: #ffffff;
+  border-color: #93b4f0;
+}
+.form990-page .f990-input:focus {
+  background: #ffffff;
+  border-color: var(--ap-accent);
+  box-shadow: 0 0 0 3px var(--ap-accent-bg);
+}
+.form990-page .f990-readonly {
+  display: block;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--ap-ink-2);
+}
+.form990-page .f990-cell.computed .f990-readonly { color: var(--ap-ink); font-weight: 500; }
+
+/* ── Form 990 layout tab ───────────────────── */
+.form990-page .f990-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-family: 'Times New Roman', Georgia, serif;
+  color: #111;
+}
+
+.form990-page .f990-banner {
+  display: grid;
+  grid-template-columns: 80px 1fr 90px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border: 2px solid #111;
+}
+.form990-page .f990-banner-num {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+.form990-page .f990-banner-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.form990-page .f990-banner-sub {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #333;
+}
+.form990-page .f990-banner-year {
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid #111;
+  padding: 6px 0;
+}
+
+.form990-page .f990-block {
+  background: #ffffff;
+  border: 1px solid #111;
+}
+.form990-page .f990-block-title {
+  padding: 8px 14px;
+  background: #f0f0f0;
+  border-bottom: 1px solid #111;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.005em;
+}
+
+.form990-page .f990-grid.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid #111;
+}
+.form990-page .f990-field {
+  padding: 8px 12px 10px;
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  font-size: 12.5px;
+}
+.form990-page .f990-field:nth-child(2n) { border-right: none; }
+.form990-page .f990-field label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #555;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.form990-page .f990-field .f990-value {
+  font-size: 13px;
+  min-height: 18px;
+  color: #111;
+}
+.form990-page .f990-field-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0;
+}
+.form990-page .f990-field-pair > div { padding: 8px 12px 10px; }
+.form990-page .f990-field-pair > div + div { border-left: 1px solid #ccc; }
+
+.form990-page .f990-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 150px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  border-bottom: 1px solid #ddd;
+  font-size: 12.5px;
+}
+.form990-page .f990-row.twocol {
+  grid-template-columns: 50px 1fr 140px 140px;
+}
+.form990-page .f990-row.sub {
+  grid-template-columns: 50px 1fr 150px;
+  background: #fafafa;
+}
+.form990-page .f990-row.emphasis {
+  background: #f6f6f6;
+  font-weight: 700;
+}
+.form990-page .f990-row.text { display: block; padding-bottom: 10px; }
+.form990-page .f990-row.text .f990-line-label { display: inline; margin-left: 4px; }
+.form990-page .f990-row:last-child { border-bottom: none; }
+.form990-page .f990-line-no {
+  font-weight: 700;
+  text-align: right;
+}
+.form990-page .f990-amt {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 8px;
+  border-bottom: 1px solid #999;
+}
+.form990-page .f990-mission {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  min-height: 32px;
+  font-size: 12.5px;
+}
+
+.form990-page .f990-twocol-head {
+  display: grid;
+  grid-template-columns: 50px 1fr 140px 140px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  background: #f0f0f0;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-top: 1px solid #111;
+  border-bottom: 1px solid #111;
+}
+.form990-page .f990-twocol-head > span:nth-child(n+3) { text-align: right; }
+
+.form990-page .f990-form-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.form990-page .f990-form-table thead th {
+  background: #f0f0f0;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #444;
+  padding: 6px 10px;
+  border-bottom: 1px solid #111;
+  text-align: left;
+}
+.form990-page .f990-form-table thead th.r { text-align: right; }
+.form990-page .f990-form-table tbody td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #ddd;
+  color: #111;
+}
+.form990-page .f990-form-table tbody td.r { text-align: right; }
+.form990-page .f990-form-table tbody td.mono { font-variant-numeric: tabular-nums; }
+.form990-page .f990-form-table tbody td.muted { color: #888; }
+
+/* ── Responsive ───────────────────────────── */
+@media (max-width: 1200px) {
+  .form990-page .f990-grid.two { grid-template-columns: 1fr; }
+  .form990-page .f990-field:nth-child(2n) { border-right: 1px solid #ccc; }
+}

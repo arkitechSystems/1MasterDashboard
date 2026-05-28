@@ -15,7 +15,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, collapsed,
   const navItemsBeforeAI = [
     { page: 'dashboard' as PageType, icon: 'dashboard', label: 'Dashboard' },
     { page: 'income-two' as PageType, icon: 'description', label: 'Income Statement' },
-    { page: 'mda' as PageType, icon: 'article', label: 'MD&A' },
+    { page: 'mda' as PageType, icon: 'insights', label: 'Analytics' },
     { page: 'test-trend' as PageType, icon: 'bar_chart', label: 'Trended IS' },
     { page: 'mva' as PageType, icon: 'analytics', label: 'MVA' },
     { page: 'impact-preview' as PageType, icon: 'preview', label: 'Impact Preview' },

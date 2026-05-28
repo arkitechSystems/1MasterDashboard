@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { BankRow, GLRow } from './data';
+import PlaidBanksPanel from './PlaidBanksPanel';
 
 interface UploadProps {
   setBankData: React.Dispatch<React.SetStateAction<BankRow[]>>;
@@ -164,6 +165,7 @@ const Upload: React.FC<UploadProps> = ({ setBankData, setGlData }) => {
 
   return (
     <div className="bank-recon-subpage" style={{ marginTop: '12px' }}>
+      <PlaidBanksPanel setBankData={setBankData} />
       <div style={{ display: 'flex', gap: '16px', alignItems: 'stretch' }}>
         {/* ─── Bank side ─── */}
         <div style={panelStyle}>

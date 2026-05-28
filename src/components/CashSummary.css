@@ -1,0 +1,159 @@
+.cash-summary {
+  --cs-ink: #222;
+  --cs-muted: #6c7a87;
+  --cs-line: #e5ebf2;
+  --cs-line-2: #eef2f7;
+  --cs-surface: #ffffff;
+  --cs-surface-2: #f4f7fb;
+  --cs-accent: #1abc9c;
+  padding: 20px 24px;
+  color: var(--cs-ink);
+}
+
+.cs-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.cs-page-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.cs-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cs-date-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--cs-muted);
+}
+.cs-date-field input {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--cs-line);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--cs-surface);
+}
+
+.cs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--cs-line);
+  background: var(--cs-surface);
+  color: var(--cs-ink);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+.cs-btn:hover { background: var(--cs-surface-2); }
+.cs-btn .material-icons { font-size: 16px; color: var(--cs-muted); }
+
+.cs-report {
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-line);
+  border-radius: 10px;
+  padding: 24px 28px 28px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.cs-report-header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--cs-line-2);
+}
+.cs-org {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--cs-ink);
+}
+.cs-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cs-ink);
+  margin-top: 4px;
+}
+.cs-asof {
+  font-size: 13px;
+  color: var(--cs-muted);
+  margin-top: 2px;
+}
+
+.cs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.cs-table th,
+.cs-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--cs-line-2);
+  vertical-align: middle;
+}
+.cs-table thead th {
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--cs-muted);
+  text-transform: none;
+  border-bottom: 1px solid var(--cs-line);
+  background: var(--cs-surface-2);
+}
+.cs-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.cs-table .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.cs-input {
+  width: 100%;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  background: transparent;
+  color: var(--cs-ink);
+}
+.cs-input:hover { border-color: var(--cs-line); }
+.cs-input:focus {
+  outline: none;
+  border-color: var(--cs-accent);
+  background: var(--cs-surface);
+}
+.cs-input.num { text-align: right; font-variant-numeric: tabular-nums; }
+.cs-input::-webkit-outer-spin-button,
+.cs-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cs-input[type="number"] { -moz-appearance: textfield; }
+
+.cs-table tfoot td {
+  border-top: 2px solid var(--cs-line);
+  border-bottom: none;
+  padding-top: 12px;
+  font-weight: 600;
+}
+.cs-total-label { text-align: right; color: var(--cs-muted); }
+.cs-total { font-size: 13.5px; }
+
+@media print {
+  .cs-toolbar { display: none; }
+  .cs-report { border: none; box-shadow: none; padding: 0; }
+}

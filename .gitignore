@@ -29,8 +29,17 @@ server/certs/
 # Local databases & data files (must NOT be committed — contains client data)
 server/database.sqlite
 server/database.sqlite-journal
+server/database.sqlite-shm
+server/database.sqlite-wal
 server/data/
 server/auditlog.txt
+
+# Auto-memory store (per-machine notes for Claude Code — not part of source)
+memory/
+
+# Local reference material (Excel templates, scratch HTML/JSX) kept off main
+Reference/
+*.xlsm
 
 # GL Data — served from protected API, not bundled in public
 public/gldet.json

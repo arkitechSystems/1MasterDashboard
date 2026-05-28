@@ -15,6 +15,7 @@ import {
   exchangePublicToken,
   syncPlaidItem,
   fetchBankTransactions,
+  fetchPlaidStatus,
 } from '../../services/plaidClient';
 import { BankRow } from './data';
 
@@ -39,6 +40,20 @@ const ConnectToBankButton: React.FC<Props> = ({ setBankData }) => {
     setBusy(true);
     setStatus('Preparing link…');
     try {
+      // Check whether the server has real Plaid creds. If not, do a direct
+      // mock exchange — Plaid Link itself would reject a mock link_token.
+      const plaidStatus = await fetchPlaidStatus();
+      if (!plaidStatus.configured) {
+        setStatus('Linking demo bank…');
+        const { id, institution_name } = await exchangePublicToken('public-mock-token');
+        setStatus(`Connected to ${institution_name || 'demo bank'}. Syncing…`);
+        const result = await syncPlaidItem(id);
+        const txns = await fetchBankTransactions(0, 999999);
+        setBankData(txns);
+        setStatus(`Demo: synced ${result.added} added, ${result.modified} updated.`);
+        setBusy(false);
+        return;
+      }
       const { link_token } = await fetchLinkToken();
       setLinkToken(link_token); // Mounts <PlaidLinkOpener>, which auto-opens
     } catch (e) {
@@ -46,7 +61,7 @@ const ConnectToBankButton: React.FC<Props> = ({ setBankData }) => {
       setStatus(`Error: ${(e as Error).message}`);
       setBusy(false);
     }
-  }, []);
+  }, [setBankData]);
 
   const handleSuccess = useCallback<LinkSuccess>(
     async (publicToken) => {

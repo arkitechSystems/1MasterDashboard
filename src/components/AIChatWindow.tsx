@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { prepareFinancialContext } from '../utils/aiDataContext';
-import { getApiUrl, API_ENDPOINTS } from '../config';
+import { API_ENDPOINTS } from '../config';
 import { assignTxIds } from '../services/glTransactions';
+import { askAi, AiMessage } from '../services/ai';
 
 interface Message {
   id: string;
@@ -68,65 +69,76 @@ const AIChatWindow: React.FC<AIChatWindowProps> = ({ onClose }) => {
     loadFinancialData();
   }, []);
 
-  const getAIResponse = async (userMessage: string): Promise<string> => {
-    try {
-      // Prepare financial context based on the question
-      let financialContext = '';
-      if (gldetData.length > 0) {
-        financialContext = prepareFinancialContext(userMessage, gldetData);
-        console.log('Sending financial context to AI:', financialContext.substring(0, 200) + '...');
-      }
-
-      const response = await fetch(getApiUrl('/ask'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: userMessage,
-          financialContext: financialContext
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to get response from AI');
-      }
-
-      return data.answer;
-    } catch (error) {
-      console.error('Error calling AI:', error);
-      return 'Sorry, I encountered an error while processing your question. Please make sure the backend server is running and try again.';
+  // Build an AiMessage[] for the API: full conversation history (skipping the
+  // canned greeting) plus the new user turn. The latest user message gets a
+  // financial-data preamble injected; the system prompt itself stays frozen
+  // server-side so prompt caching works across questions.
+  const buildHistory = (
+    priorMessages: Message[],
+    newUserText: string,
+  ): AiMessage[] => {
+    let financialContext = '';
+    if (gldetData.length > 0) {
+      financialContext = prepareFinancialContext(newUserText, gldetData);
     }
+    const enrichedUserText = financialContext
+      ? `[Dashboard data context]\n${financialContext}\n\n[User question]\n${newUserText}`
+      : newUserText;
+
+    // Skip the greeting (id === '1') so the model doesn't see its own canned line.
+    const history: AiMessage[] = priorMessages
+      .filter((m) => m.id !== '1')
+      .map((m) => ({
+        role: m.isUser ? ('user' as const) : ('assistant' as const),
+        content: m.text,
+      }));
+    history.push({ role: 'user', content: enrichedUserText });
+    return history;
   };
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
 
+    const userQuestion = inputText.trim();
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputText.trim(),
+      text: userQuestion,
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    const userQuestion = inputText.trim();
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setIsTyping(true);
 
-    // Get real AI response from OpenAI via backend
-    const aiResponseText = await getAIResponse(userQuestion);
+    let aiResponseText: string;
+    try {
+      const wireMessages = buildHistory(messages, userQuestion);
+      const res = await askAi(wireMessages);
+      aiResponseText = res.content || '(no response)';
+      if (res.usage) {
+        console.log('[Ask AI usage]', res.usage);
+      }
+    } catch (err: any) {
+      if (err?.status === 503) {
+        aiResponseText =
+          'Ask AI isn’t available yet — the backend doesn’t have ANTHROPIC_API_KEY configured. Add the key to the Render web service env vars and redeploy.';
+      } else if (err?.status === 429) {
+        aiResponseText =
+          'Rate limited by the Claude API. Wait a moment and try again.';
+      } else {
+        aiResponseText = `Sorry, I hit an error: ${err?.message || 'unknown'}.`;
+      }
+    }
 
     const aiResponse: Message = {
       id: (Date.now() + 1).toString(),
       text: aiResponseText,
       isUser: false,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, aiResponse]);
+    setMessages((prev) => [...prev, aiResponse]);
     setIsTyping(false);
   };
 

@@ -38,6 +38,7 @@
     "server": "cd server && npm run dev",
     "server:build": "cd server && npm run build",
     "server:start": "cd server && npm start",
+    "sync-skills": "node scripts/sync-skills.js",
     "update-metadata": "node update-metadata.js",
     "watch-gldet": "node watch-gldet.js",
     "prepare-static-data": "node scripts/prepare-static-data.js",

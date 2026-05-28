@@ -1,7 +1,9 @@
 import React from 'react';
 import BankRecon from './BankRecon';
+import Form990 from './Form990';
+import CashSummary from './CashSummary';
 
-type AccountingPageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'bank-recon' | 'reconciliations' | 'chart-of-accounts';
+type AccountingPageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'cash-summary' | 'bank-recon' | 'reconciliations' | 'cost-report' | '990';
 
 interface AccountingViewProps {
   currentPage: AccountingPageType;
@@ -12,6 +14,10 @@ const AccountingView: React.FC<AccountingViewProps> = ({ currentPage }) => {
     switch (currentPage) {
       case 'bank-recon':
         return <BankRecon />;
+      case '990':
+        return <Form990 />;
+      case 'cash-summary':
+        return <CashSummary />;
       default:
         return null;
     }
