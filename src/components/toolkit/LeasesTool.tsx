@@ -8,7 +8,11 @@
  *   - Initial JE (Dr ROU Asset / Cr Lease Liability) at the PV of the
  *     payment stream.
  *   - Monthly JE batch: interest expense, lease-liability reduction, cash
- *     outflow, plus straight-line amortization of the ROU asset.
+ *     outflow, plus straight-line amortization of the ROU asset. Lines
+ *     are computed so each period's debits exactly equal credits even
+ *     after rounding (principal is derived as payment − rounded interest,
+ *     and the last period's ROU amortization picks up any straight-line
+ *     residual).
  */
 
 import React, { useMemo, useState } from 'react';
@@ -22,6 +26,7 @@ import {
   downloadJournalXlsx,
   fmtMoney,
 } from './journal';
+import { parseYMD, addMonths, formatYMD } from './dateUtils';
 
 interface ScheduleRow {
   period: number;
@@ -35,17 +40,21 @@ interface ScheduleRow {
   ltLiab: number;
 }
 
-const formatDate = (d: Date): string => d.toISOString().slice(0, 10);
+const round2 = (n: number): number => Math.round(n * 100) / 100;
 
 const generateSchedule = (
-  startDate: Date,
+  commencementStr: string,
   termMonths: number,
   monthlyPayment: number,
   annualRatePct: number,
-): { rows: ScheduleRow[]; presentValue: number } => {
+): { rows: ScheduleRow[]; presentValue: number } | null => {
+  const start = parseYMD(commencementStr);
+  if (!start || termMonths <= 0 || monthlyPayment <= 0 || isNaN(annualRatePct)) {
+    return null;
+  }
   const monthlyRate = annualRatePct / 100 / 12;
   // Initial liability = PV of an annuity of monthlyPayment for termMonths
-  // at monthlyRate. When rate is 0, PV is just payment * term.
+  // at monthlyRate. When rate is 0, PV is just payment × term.
   const pv = monthlyRate === 0
     ? monthlyPayment * termMonths
     : monthlyPayment * (1 - Math.pow(1 + monthlyRate, -termMonths)) / monthlyRate;
@@ -56,9 +65,10 @@ const generateSchedule = (
     const interest = balance * monthlyRate;
     let principal = monthlyPayment - interest;
     if (i === termMonths) principal = balance; // squash rounding on the last period
-    const endingBalance = +(balance - principal).toFixed(2);
+    const endingBalance = balance - principal;
 
-    // ST liab = principal portion of the next 12 months' payments
+    // ST liab = principal portion of the next min(12, remaining) payments.
+    // Look ahead by simulating the same amortization formula.
     const remaining = termMonths - i;
     let stLiab = 0;
     const monthsToInclude = Math.min(12, remaining);
@@ -72,12 +82,9 @@ const generateSchedule = (
     stLiab = Math.min(stLiab, endingBalance);
     const ltLiab = Math.max(endingBalance - stLiab, 0);
 
-    const monthEnd = new Date(startDate);
-    monthEnd.setMonth(startDate.getMonth() + i);
-
     rows.push({
       period: i,
-      monthEnd: formatDate(monthEnd),
+      monthEnd: formatYMD(addMonths(start, i)),
       begBalance: balance,
       payment: monthlyPayment,
       interest,
@@ -104,16 +111,18 @@ const LeasesTool: React.FC = () => {
   const [cashAcct, setCashAcct] = useState('1000');
   const [schedule, setSchedule] = useState<ScheduleRow[] | null>(null);
   const [pv, setPv] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = () => {
+    setError(null);
     const term = parseInt(termMonths, 10);
     const pmt = parseFloat(monthlyPayment);
     const rate = parseFloat(discountRate);
-    if (!term || !pmt || isNaN(rate) || !commencement) {
-      alert('Please fill all required fields.');
+    const out = generateSchedule(commencement, term, pmt, rate);
+    if (!out) {
+      setError('Provide a valid commencement date, term, payment, and discount rate.');
       return;
     }
-    const out = generateSchedule(new Date(commencement), term, pmt, rate);
     setSchedule(out.rows);
     setPv(out.presentValue);
   };
@@ -121,8 +130,8 @@ const LeasesTool: React.FC = () => {
   const chartData = useMemo(
     () => schedule?.map((r) => ({
       period: r.period,
-      interest: +r.interest.toFixed(2),
-      principal: +r.principal.toFixed(2),
+      interest: round2(r.interest),
+      principal: round2(r.principal),
     })) ?? [],
     [schedule],
   );
@@ -132,9 +141,9 @@ const LeasesTool: React.FC = () => {
     const header = ['Month End', 'Period', 'Beg Balance', 'Payment', 'Interest',
       'Principal', 'Ending Balance', 'ST Liab', 'LT Liab'];
     const rows = schedule.map((r) => [
-      r.monthEnd, r.period, r.begBalance.toFixed(2), r.payment.toFixed(2),
-      r.interest.toFixed(2), r.principal.toFixed(2), r.endingBalance.toFixed(2),
-      r.stLiab.toFixed(2), r.ltLiab.toFixed(2),
+      r.monthEnd, r.period, round2(r.begBalance), round2(r.payment),
+      round2(r.interest), round2(r.principal), round2(r.endingBalance),
+      round2(r.stLiab), round2(r.ltLiab),
     ]);
     const csv = [header, ...rows].map((r) => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -168,53 +177,65 @@ const LeasesTool: React.FC = () => {
   const generateJournalBatch = (): JournalBatch => {
     if (!schedule) return { title: 'Lease_JE', lines: [] };
     const lines: JournalLine[] = [];
-    const monthlyAmort = pv / schedule.length;
+
+    // Straight-line ROU amort. Rounded per-period plus a residual on the
+    // final period so total ROU amort equals PV exactly.
+    const pvRounded = round2(pv);
+    const perMonthAmort = round2(pvRounded / schedule.length);
+    const finalAmort = round2(pvRounded - perMonthAmort * (schedule.length - 1));
+
     // 1. Initial recognition
     lines.push({
       date: commencement, account: rouAcct,
       description: `ROU Asset — ${description}`,
-      debit: pv, credit: 0, reference: description, memo: 'Initial recognition',
+      debit: pvRounded, credit: 0, reference: description, memo: 'Initial recognition',
     });
     lines.push({
       date: commencement, account: liabilityAcct,
       description: `Lease Liability — ${description}`,
-      debit: 0, credit: pv, reference: description, memo: 'Initial recognition',
+      debit: 0, credit: pvRounded, reference: description, memo: 'Initial recognition',
     });
-    // 2. Monthly entries
-    for (const r of schedule) {
-      // Cash payment: split into interest expense + principal reduction
+
+    // 2. Monthly entries — round payment + interest, derive principal so
+    //    debits = credits exactly in every period.
+    schedule.forEach((r, idx) => {
+      const payment = round2(r.payment);
+      const interest = round2(r.interest);
+      const principal = round2(payment - interest);
+      const amort = idx === schedule.length - 1 ? finalAmort : perMonthAmort;
+
       lines.push({
         date: r.monthEnd, account: interestExpAcct,
         description: `Lease interest — ${description}`,
-        debit: +r.interest.toFixed(2), credit: 0, reference: description,
+        debit: interest, credit: 0, reference: description,
         memo: `Period ${r.period}`,
       });
       lines.push({
         date: r.monthEnd, account: liabilityAcct,
         description: `Lease liability reduction — ${description}`,
-        debit: +r.principal.toFixed(2), credit: 0, reference: description,
+        debit: principal, credit: 0, reference: description,
         memo: `Period ${r.period}`,
       });
       lines.push({
         date: r.monthEnd, account: cashAcct,
         description: `Lease payment — ${description}`,
-        debit: 0, credit: +r.payment.toFixed(2), reference: description,
+        debit: 0, credit: payment, reference: description,
         memo: `Period ${r.period}`,
       });
       // Straight-line amortization of ROU asset
       lines.push({
         date: r.monthEnd, account: amortExpAcct,
         description: `ROU amortization — ${description}`,
-        debit: +monthlyAmort.toFixed(2), credit: 0, reference: description,
+        debit: amort, credit: 0, reference: description,
         memo: `Period ${r.period}`,
       });
       lines.push({
         date: r.monthEnd, account: rouAcct,
         description: `ROU amortization — ${description}`,
-        debit: 0, credit: +monthlyAmort.toFixed(2), reference: description,
+        debit: 0, credit: amort, reference: description,
         memo: `Period ${r.period}`,
       });
-    }
+    });
     return {
       title: `Lease_JE_${(description || 'lease').replace(/[^A-Za-z0-9]+/g, '_')}`,
       lines,
@@ -256,6 +277,13 @@ const LeasesTool: React.FC = () => {
         </div>
       </details>
 
+      {error && (
+        <div style={{
+          background: '#fdecea', color: '#b91c1c', border: '1px solid #f5c6c0',
+          padding: '8px 12px', borderRadius: 6, fontSize: 13, marginBottom: 12,
+        }}>{error}</div>
+      )}
+
       <div className="tk-actions">
         <button type="button" className="tk-btn" onClick={handleGenerate}>
           <span className="material-icons">play_arrow</span>Generate Schedule
@@ -282,6 +310,8 @@ const LeasesTool: React.FC = () => {
             <strong>Term:</strong> {schedule.length} months
             &nbsp;&nbsp;·&nbsp;&nbsp;
             <strong>Total payments:</strong> {fmtMoney(schedule.reduce((s, r) => s + r.payment, 0))}
+            &nbsp;&nbsp;·&nbsp;&nbsp;
+            <strong>Total interest:</strong> {fmtMoney(schedule.reduce((s, r) => s + r.interest, 0))}
           </div>
           <div className="tk-table-wrap">
             <table className="tk-table">
