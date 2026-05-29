@@ -1,0 +1,62 @@
+.auth-gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f4f7fb 0%, #e8ecf3 100%);
+  padding: 24px;
+}
+
+.auth-card {
+  background: #ffffff;
+  border: 1px solid #e5ebf2;
+  border-radius: 14px;
+  padding: 40px 36px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.auth-card h1 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1a2533;
+}
+
+.auth-card p {
+  margin: 0 0 20px;
+  color: #6c7a87;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.auth-btn {
+  display: inline-block;
+  padding: 10px 22px;
+  background: #1abc9c;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.auth-btn:hover { background: #16a085; }
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e5ebf2;
+  border-top-color: #1abc9c;
+  border-radius: 50%;
+  animation: auth-spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes auth-spin {
+  to { transform: rotate(360deg); }
+}

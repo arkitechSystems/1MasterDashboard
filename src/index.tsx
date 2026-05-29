@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { Auth0Provider } from '@auth0/auth0-react';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
@@ -12,12 +13,40 @@ if (!process.env.REACT_APP_API_URL && !localStorage.getItem('authToken')) {
   localStorage.setItem('authToken', 'static-deploy');
 }
 
+// Auth0 wiring. When the three REACT_APP_AUTH0_* env vars are absent the
+// provider still mounts but isAuthenticated stays false; AuthGate falls
+// back to the legacy un-gated UI so local development without an Auth0
+// tenant configured keeps working.
+const auth0Domain = process.env.REACT_APP_AUTH0_DOMAIN;
+const auth0ClientId = process.env.REACT_APP_AUTH0_CLIENT_ID;
+const auth0Audience = process.env.REACT_APP_AUTH0_AUDIENCE;
+
+const Root: React.FC = () => {
+  if (auth0Domain && auth0ClientId) {
+    return (
+      <Auth0Provider
+        domain={auth0Domain}
+        clientId={auth0ClientId}
+        cacheLocation="localstorage"
+        useRefreshTokens
+        authorizationParams={{
+          redirect_uri: window.location.origin,
+          audience: auth0Audience,
+        }}
+      >
+        <App />
+      </Auth0Provider>
+    );
+  }
+  return <App />;
+};
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <App />
+    <Root />
   </React.StrictMode>
 );
 

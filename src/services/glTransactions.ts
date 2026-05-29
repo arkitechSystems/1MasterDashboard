@@ -16,6 +16,7 @@
 //   fetchGLTransactions). Downstream code should treat tx_id as opaque.
 
 import { API_ENDPOINTS } from '../config';
+import { authedFetch } from './authedFetch';
 
 export const TX_ID_FIELD = 'tx_id' as const;
 
@@ -145,7 +146,7 @@ export async function fetchGLTransactions<T extends GLIdentityFields = GLIdentit
     : null);
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(API_ENDPOINTS.GL_DATA, { headers, signal: options.signal });
+  const res = await authedFetch(API_ENDPOINTS.GL_DATA, { headers, signal: options.signal });
   if (!res.ok) {
     throw new Error(`Failed to load GL data: ${res.status} ${res.statusText}`);
   }

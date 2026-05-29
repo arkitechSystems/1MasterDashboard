@@ -32,6 +32,37 @@ if (DATABASE_URL) {
 }
 
 const SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS tenants (
+  id          text PRIMARY KEY,
+  name        text NOT NULL,
+  status      text NOT NULL DEFAULT 'active',
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO tenants (id, name) VALUES ('default', 'Default Tenant')
+  ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS users (
+  id            text PRIMARY KEY,
+  email         text NOT NULL UNIQUE,
+  name          text NOT NULL DEFAULT '',
+  super_admin   boolean NOT NULL DEFAULT false,
+  last_login_at timestamptz,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+CREATE TABLE IF NOT EXISTS memberships (
+  user_id     text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  tenant_id   text NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  role        text NOT NULL CHECK (role IN ('tenant_admin','dept_head','viewer')),
+  dept_scope  jsonb NOT NULL DEFAULT '[]'::jsonb,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, tenant_id)
+);
+CREATE INDEX IF NOT EXISTS idx_memberships_user ON memberships(user_id);
+CREATE INDEX IF NOT EXISTS idx_memberships_tenant ON memberships(tenant_id);
+
 CREATE TABLE IF NOT EXISTS organization (
   id              integer  PRIMARY KEY DEFAULT 1,
   name            text     NOT NULL DEFAULT '',
@@ -210,6 +241,122 @@ export interface SetupBundle {
   deptList: DeptRow[];
   beginningTb: BeginningTbRow[];
 }
+
+export interface TenantRow {
+  id: string;
+  name: string;
+  status: string;
+}
+
+export interface UserRow {
+  id: string;
+  email: string;
+  name: string;
+  superAdmin: boolean;
+}
+
+export type Role = 'tenant_admin' | 'dept_head' | 'viewer';
+
+export interface MembershipRow {
+  userId: string;
+  tenantId: string;
+  tenantName: string;
+  role: Role;
+  deptScope: string[];
+}
+
+/* ─── Auth: users + memberships ───────────────────────────────────────── */
+
+/**
+ * Look up a user by Auth0 sub. Returns null if not yet provisioned.
+ */
+export const getUserById = async (id: string): Promise<UserRow | null> => {
+  if (!pool) throw new Error('Postgres not configured');
+  await ensureMigrated();
+  const r = await pool.query(
+    `SELECT id, email, name, super_admin FROM users WHERE id = $1`,
+    [id],
+  );
+  if (r.rows.length === 0) return null;
+  const u = r.rows[0];
+  return { id: u.id, email: u.email, name: u.name, superAdmin: u.super_admin };
+};
+
+/**
+ * JIT user upsert called from auth middleware on every valid JWT. Idempotent
+ * — keeps the user row in sync with the latest claims from Auth0. Promotes
+ * the user to super_admin if their email is in SUPER_ADMIN_EMAILS.
+ */
+export const upsertUserFromClaims = async (claims: {
+  sub: string;
+  email: string;
+  name?: string;
+}): Promise<UserRow> => {
+  if (!pool) throw new Error('Postgres not configured');
+  await ensureMigrated();
+  const superList = (process.env.SUPER_ADMIN_EMAILS || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const isSuper = superList.includes((claims.email || '').toLowerCase());
+
+  await pool.query(
+    `INSERT INTO users (id, email, name, super_admin, last_login_at)
+     VALUES ($1, $2, $3, $4, now())
+     ON CONFLICT (id) DO UPDATE SET
+       email = EXCLUDED.email,
+       name = COALESCE(NULLIF(EXCLUDED.name, ''), users.name),
+       super_admin = users.super_admin OR EXCLUDED.super_admin,
+       last_login_at = now()`,
+    [claims.sub, claims.email, claims.name || '', isSuper],
+  );
+
+  // First-time super_admin: grant a default-tenant tenant_admin membership
+  // so the user has somewhere to land. Idempotent.
+  if (isSuper) {
+    await pool.query(
+      `INSERT INTO memberships (user_id, tenant_id, role)
+       VALUES ($1, 'default', 'tenant_admin')
+       ON CONFLICT DO NOTHING`,
+      [claims.sub],
+    );
+  }
+
+  const user = await getUserById(claims.sub);
+  if (!user) throw new Error('Failed to upsert user');
+  return user;
+};
+
+export const getMembershipsForUser = async (
+  userId: string,
+): Promise<MembershipRow[]> => {
+  if (!pool) throw new Error('Postgres not configured');
+  await ensureMigrated();
+  const r = await pool.query(
+    `SELECT m.user_id, m.tenant_id, t.name AS tenant_name, m.role, m.dept_scope
+       FROM memberships m
+       JOIN tenants t ON t.id = m.tenant_id
+      WHERE m.user_id = $1
+      ORDER BY t.name`,
+    [userId],
+  );
+  return r.rows.map((row) => ({
+    userId: row.user_id,
+    tenantId: row.tenant_id,
+    tenantName: row.tenant_name,
+    role: row.role,
+    deptScope: Array.isArray(row.dept_scope) ? row.dept_scope : [],
+  }));
+};
+
+export const listTenants = async (): Promise<TenantRow[]> => {
+  if (!pool) throw new Error('Postgres not configured');
+  await ensureMigrated();
+  const r = await pool.query(
+    `SELECT id, name, status FROM tenants ORDER BY name`,
+  );
+  return r.rows;
+};
 
 /* ─── Read ────────────────────────────────────────────────────────────── */
 

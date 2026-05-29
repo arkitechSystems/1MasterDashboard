@@ -5,6 +5,7 @@
  */
 
 import { API_BASE_URL } from '../config';
+import { authedFetch } from './authedFetch';
 
 const url = (p: string) => `${API_BASE_URL}${p}`;
 
@@ -84,11 +85,11 @@ export interface GlDetailRowWire {
 }
 
 export const getSetup = async (): Promise<SetupBundle> =>
-  json<SetupBundle>(await fetch(url('/api/setup')));
+  json<SetupBundle>(await authedFetch(url('/api/setup')));
 
 export const saveSetup = async (bundle: SetupBundle): Promise<void> => {
   await json(
-    await fetch(url('/api/setup'), {
+    await authedFetch(url('/api/setup'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bundle),
@@ -97,11 +98,11 @@ export const saveSetup = async (bundle: SetupBundle): Promise<void> => {
 };
 
 export const getBudget = async (): Promise<BudgetRowWire[]> =>
-  json<BudgetRowWire[]>(await fetch(url('/api/budget')));
+  json<BudgetRowWire[]>(await authedFetch(url('/api/budget')));
 
 export const saveBudget = async (rows: BudgetRowWire[]): Promise<void> => {
   await json(
-    await fetch(url('/api/budget'), {
+    await authedFetch(url('/api/budget'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(rows),
@@ -110,11 +111,11 @@ export const saveBudget = async (rows: BudgetRowWire[]): Promise<void> => {
 };
 
 export const getGlDetail = async (): Promise<GlDetailRowWire[]> =>
-  json<GlDetailRowWire[]>(await fetch(url('/api/gl-detail')));
+  json<GlDetailRowWire[]>(await authedFetch(url('/api/gl-detail')));
 
 export const saveGlDetail = async (rows: GlDetailRowWire[]): Promise<void> => {
   await json(
-    await fetch(url('/api/gl-detail'), {
+    await authedFetch(url('/api/gl-detail'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(rows),
@@ -130,7 +131,7 @@ export interface BankMappingWire {
 
 export const saveBankMappings = async (rows: BankMappingWire[]): Promise<void> => {
   await json(
-    await fetch(url('/api/coa/bank-mapping'), {
+    await authedFetch(url('/api/coa/bank-mapping'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(rows),
@@ -141,7 +142,7 @@ export const saveBankMappings = async (rows: BankMappingWire[]): Promise<void> =
 /** Returns true if the server has Postgres configured. */
 export const setupAvailable = async (): Promise<boolean> => {
   try {
-    const res = await fetch(url('/api/setup'));
+    const res = await authedFetch(url('/api/setup'));
     if (res.status === 503) return false;
     return res.ok;
   } catch {

@@ -59,6 +59,12 @@ import {
   removeItem,
 } from './plaid';
 import Anthropic from '@anthropic-ai/sdk';
+import {
+  attachUser,
+  requireAuth,
+  isAuthEnabled,
+} from './auth';
+import { listTenants } from './dbSetup';
 
 dotenv.config();
 
@@ -92,6 +98,46 @@ app.use(express.json({ limit: '50mb' }));
 app.use((req: Request, res: Response, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
+});
+
+// Best-effort: decode the Bearer token (if present) and attach
+// req.user/memberships/activeTenantId. Strict gating happens per-route
+// via requireAuth.
+app.use(attachUser);
+
+app.get('/api/auth/me', requireAuth, (req: Request, res: Response) => {
+  res.json({
+    user: req.user,
+    memberships: req.memberships ?? [],
+    activeTenant: req.activeMembership ?? null,
+  });
+});
+
+app.get('/api/auth/tenants', requireAuth, async (req: Request, res: Response) => {
+  try {
+    // Super-admins see every tenant; everyone else sees just the ones
+    // they have a membership in.
+    if (req.user?.superAdmin) {
+      const tenants = await listTenants();
+      res.json(tenants);
+      return;
+    }
+    const visible = (req.memberships ?? []).map((m) => ({
+      id: m.tenantId,
+      name: m.tenantName,
+      status: 'active' as const,
+    }));
+    res.json(visible);
+  } catch (e: any) {
+    console.error('GET /api/auth/tenants', e);
+    res.status(500).json({ error: e?.message || 'Failed to list tenants' });
+  }
+});
+
+// Public flag the frontend can call to know whether to render the
+// Auth0 sign-in flow at all (vs the legacy un-authenticated UI).
+app.get('/api/auth/status', (_req: Request, res: Response) => {
+  res.json({ enabled: isAuthEnabled() });
 });
 
 app.get('/api/health', (req: Request, res: Response) => {

@@ -26,6 +26,7 @@ import SubmitTicket from './components/SubmitTicket';
 import Admin from './components/Admin';
 import Questionnaire from './components/Questionnaire';
 import HiddenLinks from './components/HiddenLinks';
+import AuthGate from './auth/AuthGate';
 
 type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket' | 'admin' | 'questionnaire';
 
@@ -164,7 +165,9 @@ function AppContent() {
 const App: React.FC = () => {
   return (
     <SettingsProvider>
-      <AppContent />
+      <AuthGate>
+        <AppContent />
+      </AuthGate>
     </SettingsProvider>
   );
 };

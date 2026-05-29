@@ -7,6 +7,7 @@
 
 import { API_BASE_URL } from '../config';
 import { BankRow } from '../components/bank-recon/data';
+import { authedFetch } from './authedFetch';
 
 export interface PlaidStatus {
   configured: boolean;
@@ -32,11 +33,11 @@ const json = async <T,>(resp: Response): Promise<T> => {
 };
 
 export const fetchPlaidStatus = async (): Promise<PlaidStatus> => {
-  return json<PlaidStatus>(await fetch(`${API_BASE_URL}/api/plaid/status`));
+  return json<PlaidStatus>(await authedFetch(`${API_BASE_URL}/api/plaid/status`));
 };
 
 export const fetchLinkToken = async (): Promise<{ link_token: string; expiration: string }> => {
-  return json(await fetch(`${API_BASE_URL}/api/plaid/link-token`, {
+  return json(await authedFetch(`${API_BASE_URL}/api/plaid/link-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   }));
@@ -45,7 +46,7 @@ export const fetchLinkToken = async (): Promise<{ link_token: string; expiration
 export const exchangePublicToken = async (
   publicToken: string,
 ): Promise<{ id: number; institution_name: string | null }> => {
-  return json(await fetch(`${API_BASE_URL}/api/plaid/exchange`, {
+  return json(await authedFetch(`${API_BASE_URL}/api/plaid/exchange`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ public_token: publicToken }),
@@ -53,19 +54,19 @@ export const exchangePublicToken = async (
 };
 
 export const listPlaidItems = async (): Promise<PlaidItem[]> => {
-  return json<PlaidItem[]>(await fetch(`${API_BASE_URL}/api/plaid/items`));
+  return json<PlaidItem[]>(await authedFetch(`${API_BASE_URL}/api/plaid/items`));
 };
 
 export const syncPlaidItem = async (
   id: number,
 ): Promise<{ added: number; modified: number; removed: number }> => {
-  return json(await fetch(`${API_BASE_URL}/api/plaid/items/${id}/sync`, {
+  return json(await authedFetch(`${API_BASE_URL}/api/plaid/items/${id}/sync`, {
     method: 'POST',
   }));
 };
 
 export const disconnectPlaidItem = async (id: number): Promise<void> => {
-  await json(await fetch(`${API_BASE_URL}/api/plaid/items/${id}`, {
+  await json(await authedFetch(`${API_BASE_URL}/api/plaid/items/${id}`, {
     method: 'DELETE',
   }));
 };
@@ -79,6 +80,6 @@ export const fetchBankTransactions = async (
     me_end: String(meEnd),
   });
   return json<BankRow[]>(
-    await fetch(`${API_BASE_URL}/api/bank-transactions?${params}`),
+    await authedFetch(`${API_BASE_URL}/api/bank-transactions?${params}`),
   );
 };

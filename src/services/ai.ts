@@ -4,6 +4,7 @@
  */
 
 import { API_BASE_URL } from '../config';
+import { authedFetch } from './authedFetch';
 
 export interface AiMessage {
   role: 'user' | 'assistant';
@@ -21,7 +22,7 @@ export interface AiResponse {
 }
 
 const aiFetch = async <T,>(path: string, body: unknown): Promise<T> => {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await authedFetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

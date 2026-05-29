@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../config';
+import { useAuth } from '../auth/useAuth';
 
 type PageType = 'dashboard' | 'income-two' | 'mda' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket' | 'admin' | 'questionnaire';
 
@@ -26,8 +27,20 @@ interface Notification {
 }
 
 const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSidebar, currentView = 'dashboard', onViewChange }) => {
-  const userName = "Admin";
-  const userTitle = "CFO";
+  const {
+    authConfigured,
+    user: authUser,
+    memberships,
+    activeTenant,
+    isSuperAdmin,
+    switchTenant,
+    logout,
+  } = useAuth();
+
+  const userName = authUser?.name || authUser?.email || 'Admin';
+  const userTitle = activeTenant?.tenantName
+    || (isSuperAdmin ? 'Super Admin' : 'CFO');
+  const showTenantSwitcher = authConfigured && (memberships.length > 1 || isSuperAdmin);
   const [searchQuery, setSearchQuery] = useState('');
   const [lastRefreshDate, setLastRefreshDate] = useState<string>('Loading...');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -544,6 +557,28 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
               </div>
             </div>
             <div className="user-dropdown">
+              {showTenantSwitcher && (
+                <div className="dropdown-section">
+                  <div className="dropdown-section-label">
+                    <span className="material-icons">business</span>
+                    <span>Tenant</span>
+                  </div>
+                  {memberships.map((m) => (
+                    <div
+                      key={m.tenantId}
+                      className={`dropdown-item ${activeTenant?.tenantId === m.tenantId ? 'active' : ''}`}
+                      onClick={() => switchTenant(m.tenantId)}
+                      title={`Role: ${m.role}`}
+                    >
+                      <span className="material-icons">
+                        {activeTenant?.tenantId === m.tenantId ? 'radio_button_checked' : 'radio_button_unchecked'}
+                      </span>
+                      <span>{m.tenantName}</span>
+                    </div>
+                  ))}
+                  <div className="dropdown-divider" />
+                </div>
+              )}
               <div
                 className="dropdown-item"
                 onClick={() => onViewChange?.(currentView === 'dashboard' ? 'accounting' : 'dashboard')}
@@ -571,6 +606,15 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
                 <span className="material-icons">fact_check</span>
                 <span>Questionnaire</span>
               </div>
+              {authConfigured && (
+                <>
+                  <div className="dropdown-divider" />
+                  <div className="dropdown-item" onClick={logout}>
+                    <span className="material-icons">logout</span>
+                    <span>Sign out</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
