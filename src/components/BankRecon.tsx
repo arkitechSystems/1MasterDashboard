@@ -9,7 +9,10 @@ import Balances from './bank-recon/Balances';
 import Upload from './bank-recon/Upload';
 import AiRecon from './bank-recon/AiRecon';
 import ConnectToBankButton from './bank-recon/ConnectToBankButton';
+import CashAccountsLanding from './bank-recon/CashAccountsLanding';
+import { CashAccount } from '../services/cashAccounts';
 import './BankRecon.css';
+import './bank-recon/CashAccountsLanding.css';
 import {
   INITIAL_BANK_DATA,
   INITIAL_GL_DATA,
@@ -43,6 +46,10 @@ const TABS: { id: BankReconTab; label: string; icon: string }[] = [
 const BankRecon: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [activeTab, setActiveTab] = useState<BankReconTab>('reconciliation');
+  // When null, the landing view is shown. Once the user picks a cash
+  // account from the landing, we drill into the existing tabbed recon UI
+  // pre-populated with that account's metadata.
+  const [selectedAccount, setSelectedAccount] = useState<CashAccount | null>(null);
 
   // Lifted state so Matches and Bank/GL tabs share the same underlying data
   const [bankData, setBankData] = useState<BankRow[]>(INITIAL_BANK_DATA);
@@ -77,6 +84,22 @@ const BankRecon: React.FC = () => {
   const jumpToMatch = (matchNum: number) => {
     setMatchNumFilter(matchNum);
     setActiveTab('bank-gl');
+  };
+
+  // Drilling in from the cash-accounts landing — pre-fill the metadata
+  // the Reconciliation tab displays so the user doesn't retype the GL #,
+  // description, bank, or account number they already configured in Setup.
+  const handleSelectAccount = (acct: CashAccount) => {
+    setSelectedAccount(acct);
+    setGlAccountNumber(acct.gl);
+    setAccountDescription(acct.description);
+    setBankName(acct.bank);
+    setBankAccountNumber(acct.bankAccountNumber);
+    setActiveTab('reconciliation');
+  };
+
+  const handleBackToLanding = () => {
+    setSelectedAccount(null);
   };
 
   const handleExportExcel = () => {
@@ -607,72 +630,105 @@ const BankRecon: React.FC = () => {
     }
   };
 
+  const monthDropdown = (
+    <>
+      <label htmlFor="bank-recon-month" style={{ fontWeight: 'bold' }}>
+        Month:
+      </label>
+      <select
+        id="bank-recon-month"
+        value={selectedMonth}
+        onChange={(e) => setSelectedMonth(e.target.value)}
+        style={{
+          padding: '8px 12px',
+          fontSize: '14px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          backgroundColor: 'white',
+          minWidth: '160px',
+        }}
+      >
+        <option value="">—</option>
+        {BALANCES_DATA.map((r) => (
+          <option key={r.me} value={String(r.me)}>
+            {excelSerialToMonthYear(r.me)}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+
   return (
     <div className="bank-recon">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-        <h1 className="page-title">Bank Reconciliation</h1>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center' }}>
+          {selectedAccount && (
+            <button
+              type="button"
+              className="cash-back"
+              onClick={handleBackToLanding}
+              aria-label="Back to cash accounts"
+            >
+              <span className="material-icons">chevron_left</span>
+              <span>Cash Accounts</span>
+            </button>
+          )}
+          <span>Bank Reconciliation</span>
+          {selectedAccount && (
+            <span className="cash-context" style={{ marginLeft: 12 }}>
+              — <strong>{selectedAccount.gl}</strong> {selectedAccount.description}
+            </span>
+          )}
+        </h1>
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
           <ConnectToBankButton setBankData={setBankData} />
-          <label htmlFor="bank-recon-month" style={{ fontWeight: 'bold' }}>
-            Month:
-          </label>
-          <select
-            id="bank-recon-month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              fontSize: '14px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              backgroundColor: 'white',
-              minWidth: '160px'
-            }}
-          >
-            <option value="">—</option>
-            {BALANCES_DATA.map((r) => (
-              <option key={r.me} value={String(r.me)}>
-                {excelSerialToMonthYear(r.me)}
-              </option>
-            ))}
-          </select>
+          {monthDropdown}
         </div>
       </div>
       <hr style={{ margin: '4px 0' }} />
 
-      <div
-        className="bank-recon-tabs-row"
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', margin: '8px 0' }}
-      >
-        <div className="br-tabs">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                className={`br-tab ${isActive ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <span className="material-icons" aria-hidden="true">{tab.icon}</span>
-                {tab.label}
+      {selectedAccount === null ? (
+        <CashAccountsLanding
+          selectedMonth={selectedMonth ? excelSerialToMonthYear(parseInt(selectedMonth, 10)) : ''}
+          onSelectAccount={handleSelectAccount}
+        />
+      ) : (
+        <>
+          <div
+            className="bank-recon-tabs-row"
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', margin: '8px 0' }}
+          >
+            <div className="br-tabs">
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`br-tab ${isActive ? 'active' : ''}`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <span className="material-icons" aria-hidden="true">{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" className="btn" onClick={handleExportExcel}>
+                <span className="material-icons" aria-hidden="true">download</span>
+                <span>Export to Excel</span>
               </button>
-            );
-          })}
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button type="button" className="btn" onClick={handleExportExcel}>
-            <span className="material-icons" aria-hidden="true">download</span>
-            <span>Export to Excel</span>
-          </button>
-          <button type="button" className="btn" onClick={handleExportPDF}>
-            <span className="material-icons" aria-hidden="true">picture_as_pdf</span>
-            <span>Export to PDF</span>
-          </button>
-        </div>
-      </div>
+              <button type="button" className="btn" onClick={handleExportPDF}>
+                <span className="material-icons" aria-hidden="true">picture_as_pdf</span>
+                <span>Export to PDF</span>
+              </button>
+            </div>
+          </div>
 
-      {renderTab()}
+          {renderTab()}
+        </>
+      )}
     </div>
   );
 };

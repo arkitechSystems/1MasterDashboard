@@ -1,0 +1,177 @@
+/* Styles for the Bank Recon landing — scoped under .bank-recon so they
+   inherit the page's CSS variables. */
+
+.bank-recon .cash-landing {
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--line, #e5ebf2);
+  border-radius: 10px;
+  padding: 20px 22px 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.bank-recon .cash-landing-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.bank-recon .cash-landing-header h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink, #222);
+}
+.bank-recon .cash-landing-sub {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted, #6c7a87);
+  max-width: 620px;
+  line-height: 1.5;
+}
+.bank-recon .cash-landing-month {
+  font-size: 13px;
+  color: var(--muted, #6c7a87);
+  background: var(--bg-surface-2, #f4f7fb);
+  padding: 6px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.bank-recon .cash-landing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.bank-recon .cash-landing-table th,
+.bank-recon .cash-landing-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line-2, #eef2f7);
+  vertical-align: middle;
+}
+.bank-recon .cash-landing-table thead th {
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--muted, #6c7a87);
+  background: var(--bg-surface-2, #f4f7fb);
+  border-bottom: 1px solid var(--line, #e5ebf2);
+}
+.bank-recon .cash-landing-table tbody tr:hover {
+  background: var(--bg-surface-2, #f4f7fb);
+}
+.bank-recon .cash-landing-table .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.bank-recon .cash-landing-table .muted {
+  color: var(--muted, #6c7a87);
+}
+
+.bank-recon .cash-landing-input {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  background: transparent;
+  color: var(--ink, #222);
+}
+.bank-recon .cash-landing-input:hover:not(:disabled) {
+  border-color: var(--line, #e5ebf2);
+}
+.bank-recon .cash-landing-input:focus {
+  outline: none;
+  border-color: var(--accent, #1abc9c);
+  background: var(--bg-surface, #fff);
+}
+.bank-recon .cash-landing-input:disabled {
+  color: var(--faint, #9aa6b2);
+  cursor: not-allowed;
+}
+
+.bank-recon .cash-landing-action {
+  text-align: right;
+  white-space: nowrap;
+}
+.bank-recon .cash-landing-reconcile {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--accent, #1abc9c);
+  background: var(--accent, #1abc9c);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.bank-recon .cash-landing-reconcile:hover {
+  background: var(--accent-2, #16a085);
+  border-color: var(--accent-2, #16a085);
+}
+.bank-recon .cash-landing-reconcile .material-icons { font-size: 16px; }
+
+.bank-recon .cash-landing-empty,
+.bank-recon .cash-landing-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 24px;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--line, #e5ebf2);
+  border-radius: 10px;
+}
+.bank-recon .cash-landing-empty .material-icons,
+.bank-recon .cash-landing-error .material-icons {
+  font-size: 36px;
+  color: var(--muted, #6c7a87);
+  margin-bottom: 8px;
+}
+.bank-recon .cash-landing-empty p,
+.bank-recon .cash-landing-error p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted, #6c7a87);
+  max-width: 480px;
+  line-height: 1.55;
+}
+.bank-recon .cash-landing-error .material-icons {
+  color: var(--neg, #e74c3c);
+}
+
+/* Breadcrumb header when an account is selected */
+.bank-recon .cash-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  margin-right: 8px;
+  color: var(--accent, #1abc9c);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 4px;
+}
+.bank-recon .cash-back:hover { background: var(--accent-bg, #e8f8f4); }
+.bank-recon .cash-back .material-icons { font-size: 18px; }
+
+.bank-recon .cash-context {
+  font-size: 13px;
+  color: var(--muted, #6c7a87);
+  font-weight: 400;
+}
+.bank-recon .cash-context strong {
+  color: var(--ink, #222);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
