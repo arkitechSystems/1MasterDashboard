@@ -151,6 +151,13 @@ CREATE INDEX IF NOT EXISTS idx_gldetail_month ON gl_detail(month_end);
 ALTER TABLE gl_detail ADD COLUMN IF NOT EXISTS tx_id text;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_gldetail_tx_id
   ON gl_detail(tx_id) WHERE tx_id IS NOT NULL;
+
+-- superseded_by points at the tx_id that replaces this row. NULL when
+-- the row is "current". Set when the user re-uploads a corrected version
+-- of a transaction (memo typo fix, amount correction) and confirms the
+-- old row should be retired.
+ALTER TABLE gl_detail ADD COLUMN IF NOT EXISTS superseded_by text;
+CREATE INDEX IF NOT EXISTS idx_gldetail_superseded ON gl_detail(superseded_by);
 `;
 
 let migrated = false;
@@ -646,7 +653,123 @@ export interface MergeResult {
   inserted: number;
   skipped: number;
   total: number;
+  candidates: SupersedeCandidate[];
 }
+
+/** A pair returned to the UI when a freshly-inserted row LOOKS like the
+ * corrected version of an existing row (same account + date + amount,
+ * different other fields). The user decides whether to mark the old
+ * row as superseded. */
+export interface SupersedeCandidate {
+  oldRow: GlDetailRowWithTxId;
+  newRow: GlDetailRowWithTxId;
+}
+
+export interface GlDetailRowWithTxId extends GlDetailRow {
+  txId: string;
+}
+
+/**
+ * Given a set of tx_ids that were just inserted into gl_detail, find
+ * older "current" rows (superseded_by IS NULL) that share account+date+
+ * amount with one of those new rows but differ on at least one of
+ * memo/journal/reference/description. These are candidates the user can
+ * mark as replaced.
+ *
+ * Two different real transactions could legitimately share those three
+ * fields, so this is a *suggestion* — the UI must let the user confirm
+ * or reject each candidate.
+ */
+export const findSupersedeCandidates = async (
+  insertedTxIds: string[],
+): Promise<SupersedeCandidate[]> => {
+  if (!pool || insertedTxIds.length === 0) return [];
+  await ensureMigrated();
+  // Self-join on (account, date, amount). Exclude pairs where both rows
+  // are in the just-inserted set (they're peers, not predecessor).
+  const r = await pool.query(
+    `WITH inserted AS (SELECT tx_id FROM gl_detail WHERE tx_id = ANY($1::text[]))
+     SELECT
+       o.id AS old_id, o.template AS old_template, o.date AS old_date,
+       o.month_end AS old_month_end, o.account AS old_account,
+       o.description AS old_description, o.memo AS old_memo,
+       o.reference AS old_reference, o.journal AS old_journal,
+       o.amount AS old_amount, o.tx_id AS old_tx_id,
+       n.id AS new_id, n.template AS new_template, n.date AS new_date,
+       n.month_end AS new_month_end, n.account AS new_account,
+       n.description AS new_description, n.memo AS new_memo,
+       n.reference AS new_reference, n.journal AS new_journal,
+       n.amount AS new_amount, n.tx_id AS new_tx_id
+       FROM gl_detail n
+       JOIN gl_detail o ON
+         o.account = n.account
+         AND o.date = n.date
+         AND o.amount = n.amount
+         AND o.tx_id <> n.tx_id
+      WHERE n.tx_id = ANY($1::text[])
+        AND o.superseded_by IS NULL
+        AND o.tx_id NOT IN (SELECT tx_id FROM inserted)
+        AND (
+          o.memo IS DISTINCT FROM n.memo
+          OR o.journal IS DISTINCT FROM n.journal
+          OR o.reference IS DISTINCT FROM n.reference
+          OR o.description IS DISTINCT FROM n.description
+        )
+      ORDER BY n.tx_id, o.id`,
+    [insertedTxIds],
+  );
+  return r.rows.map((row) => ({
+    oldRow: {
+      template: row.old_template, date: row.old_date, monthEnd: row.old_month_end,
+      account: row.old_account, description: row.old_description, memo: row.old_memo,
+      reference: row.old_reference, journal: row.old_journal,
+      amount: Number(row.old_amount), txId: row.old_tx_id,
+    },
+    newRow: {
+      template: row.new_template, date: row.new_date, monthEnd: row.new_month_end,
+      account: row.new_account, description: row.new_description, memo: row.new_memo,
+      reference: row.new_reference, journal: row.new_journal,
+      amount: Number(row.new_amount), txId: row.new_tx_id,
+    },
+  }));
+};
+
+export interface SupersedePair {
+  oldTxId: string;
+  newTxId: string;
+}
+
+/**
+ * Mark old rows as superseded by new rows. Idempotent — running the same
+ * pair twice yields the same final state. Refuses to set superseded_by
+ * to the row's own tx_id.
+ */
+export const applySupersedes = async (
+  pairs: SupersedePair[],
+): Promise<{ updated: number }> => {
+  if (!pool || pairs.length === 0) return { updated: 0 };
+  await ensureMigrated();
+  let updated = 0;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const p of pairs) {
+      if (!p.oldTxId || !p.newTxId || p.oldTxId === p.newTxId) continue;
+      const r = await client.query(
+        `UPDATE gl_detail SET superseded_by = $2 WHERE tx_id = $1`,
+        [p.oldTxId, p.newTxId],
+      );
+      updated += r.rowCount ?? 0;
+    }
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw e;
+  } finally {
+    client.release();
+  }
+  return { updated };
+};
 
 /**
  * Idempotent upsert for gl_detail. Computes tx_id for each candidate row
@@ -693,6 +816,7 @@ export const mergeGlDetail = async (rows: GlDetailRow[]): Promise<MergeResult> =
   });
 
   let inserted = 0;
+  const insertedTxIds: string[] = [];
   const batchSize = 500;
   const client = await pool.connect();
   try {
@@ -713,14 +837,19 @@ export const mergeGlDetail = async (rows: GlDetailRow[]): Promise<MergeResult> =
           computeGlDetailTxId(r),
         );
       });
+      // RETURNING gives us the actually-inserted tx_ids (ON CONFLICT
+      // skipped rows don't appear), which we feed to the supersede
+      // detector after the transaction commits.
       const result = await client.query(
         `INSERT INTO gl_detail
            (template, date, month_end, account, description, memo, reference, journal, amount, tx_id)
          VALUES ${placeholders.join(',')}
-         ON CONFLICT (tx_id) DO NOTHING`,
+         ON CONFLICT (tx_id) DO NOTHING
+         RETURNING tx_id`,
         values,
       );
       inserted += result.rowCount ?? 0;
+      for (const row of result.rows) insertedTxIds.push(row.tx_id);
     }
     await client.query('COMMIT');
   } catch (e) {
@@ -730,7 +859,13 @@ export const mergeGlDetail = async (rows: GlDetailRow[]): Promise<MergeResult> =
     client.release();
   }
 
-  return { inserted, skipped: rows.length - inserted, total: rows.length };
+  const candidates = await findSupersedeCandidates(insertedTxIds);
+  return {
+    inserted,
+    skipped: rows.length - inserted,
+    total: rows.length,
+    candidates,
+  };
 };
 
 /**
@@ -742,7 +877,7 @@ export const previewGlDetailMerge = async (rows: GlDetailRow[]): Promise<MergeRe
   if (!pool) throw new Error('Postgres not configured');
   await ensureMigrated();
   const { computeGlDetailTxId } = await import('./txId');
-  if (rows.length === 0) return { inserted: 0, skipped: 0, total: 0 };
+  if (rows.length === 0) return { inserted: 0, skipped: 0, total: 0, candidates: [] };
 
   // Dedupe within the upload itself first — the same tx_id appearing
   // multiple times in the source file would otherwise inflate the
@@ -763,5 +898,5 @@ export const previewGlDetailMerge = async (rows: GlDetailRow[]): Promise<MergeRe
     for (const row of r.rows) existing.add(row.tx_id);
   }
   const inserted = idArr.length - existing.size;
-  return { inserted, skipped: rows.length - inserted, total: rows.length };
+  return { inserted, skipped: rows.length - inserted, total: rows.length, candidates: [] };
 };

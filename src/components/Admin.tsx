@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import * as setupApi from '../services/setupApi';
+import SupersedeReview from './SupersedeReview';
 import './Admin.css';
 
 /* ─────────────────────────────────────────────
@@ -3924,7 +3925,8 @@ const Admin: React.FC = () => {
   const [glMergeResult, setGlMergeResult] = useState<
     | { state: 'idle' }
     | { state: 'merging' }
-    | { state: 'done'; inserted: number; skipped: number; total: number }
+    | { state: 'done'; inserted: number; skipped: number; total: number;
+        candidates: setupApi.SupersedeCandidate[] }
     | { state: 'error'; message: string }
   >({ state: 'idle' });
   const [glDetail, setGlDetail] = useState<{
@@ -4578,6 +4580,13 @@ const Admin: React.FC = () => {
                 <strong>{glMergeResult.inserted.toLocaleString()} new</strong>,{' '}
                 {glMergeResult.skipped.toLocaleString()} already in GL (Bank
                 Recon match numbers preserved).
+                {glMergeResult.candidates.length > 0 && (
+                  <>
+                    {' '}
+                    <strong>{glMergeResult.candidates.length}</strong> potential
+                    replacement{glMergeResult.candidates.length === 1 ? '' : 's'} below.
+                  </>
+                )}
               </>
             )}
             {glMergeResult.state === 'error' && (
@@ -4586,6 +4595,19 @@ const Admin: React.FC = () => {
               </>
             )}
           </div>
+        )}
+
+        {glDetail && glMergeResult.state === 'done' && glMergeResult.candidates.length > 0 && (
+          <SupersedeReview
+            candidates={glMergeResult.candidates}
+            onClose={() => {
+              // Drop the candidates from state so the panel disappears;
+              // keep the rest of the result so the green banner stays.
+              setGlMergeResult((prev) =>
+                prev.state === 'done' ? { ...prev, candidates: [] } : prev,
+              );
+            }}
+          />
         )}
 
         {glDetail && (
@@ -4761,6 +4783,7 @@ const Admin: React.FC = () => {
                       inserted: result.inserted,
                       skipped: result.skipped,
                       total: result.total,
+                      candidates: result.candidates ?? [],
                     });
                   })
                   .catch((e) => {

@@ -33,6 +33,7 @@ import {
   saveGlDetail,
   mergeGlDetail,
   previewGlDetailMerge,
+  applySupersedes,
   saveCoaBankMappings,
   SetupBundle,
   BudgetRow as PgBudgetRow,
@@ -599,6 +600,31 @@ app.post('/api/gl-detail/merge', async (req: Request, res: Response) => {
   } catch (e: any) {
     console.error('POST /api/gl-detail/merge', e);
     res.status(500).json({ error: e?.message || 'Failed to merge GL detail' });
+  }
+});
+
+/**
+ * Mark old rows as superseded by new rows. Body is an array of
+ * { oldTxId, newTxId } pairs. Idempotent — sending the same pair twice
+ * leaves the row in the same final state.
+ */
+app.post('/api/gl-detail/supersede', async (req: Request, res: Response) => {
+  if (!requirePg(res)) return;
+  try {
+    const pairs = req.body as { oldTxId: string; newTxId: string }[];
+    if (!Array.isArray(pairs)) {
+      res.status(400).json({ error: 'Body must be an array of { oldTxId, newTxId } pairs.' });
+      return;
+    }
+    if (!pairs.every((p) => p && typeof p.oldTxId === 'string' && typeof p.newTxId === 'string')) {
+      res.status(400).json({ error: 'Each pair needs oldTxId and newTxId.' });
+      return;
+    }
+    const result = await applySupersedes(pairs);
+    res.json(result);
+  } catch (e: any) {
+    console.error('POST /api/gl-detail/supersede', e);
+    res.status(500).json({ error: e?.message || 'Failed to apply supersedes' });
   }
 });
 

@@ -123,11 +123,41 @@ export const saveGlDetail = async (rows: GlDetailRowWire[]): Promise<void> => {
   );
 };
 
+export interface GlDetailRowWithTxId extends GlDetailRowWire {
+  txId: string;
+}
+
+export interface SupersedeCandidate {
+  oldRow: GlDetailRowWithTxId;
+  newRow: GlDetailRowWithTxId;
+}
+
 export interface GlMergeResult {
   inserted: number;
   skipped: number;
   total: number;
+  candidates: SupersedeCandidate[];
 }
+
+export interface SupersedePair {
+  oldTxId: string;
+  newTxId: string;
+}
+
+/**
+ * Mark old GL rows as superseded by new ones. Returns count of rows
+ * updated. Safe to call with an empty array.
+ */
+export const applySupersedes = async (
+  pairs: SupersedePair[],
+): Promise<{ updated: number }> =>
+  json<{ updated: number }>(
+    await authedFetch(url('/api/gl-detail/supersede'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pairs),
+    }),
+  );
 
 /**
  * Diff-only preview. Returns the counts the UI would see if it ran the
