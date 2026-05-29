@@ -31,6 +31,8 @@ import {
   saveBudget,
   getGlDetail,
   saveGlDetail,
+  mergeGlDetail,
+  previewGlDetailMerge,
   saveCoaBankMappings,
   SetupBundle,
   BudgetRow as PgBudgetRow,
@@ -554,6 +556,49 @@ app.put('/api/gl-detail', async (req: Request, res: Response) => {
   } catch (e: any) {
     console.error('PUT /api/gl-detail', e);
     res.status(500).json({ error: e?.message || 'Failed to save GL detail' });
+  }
+});
+
+/**
+ * Diff-only preview — no writes. Returns { inserted, skipped, total } so
+ * the Setup Upload UI can render a confirm dialog before the user runs
+ * the actual merge.
+ */
+app.post('/api/gl-detail/preview-merge', async (req: Request, res: Response) => {
+  if (!requirePg(res)) return;
+  try {
+    const rows = req.body as PgGlDetailRow[];
+    if (!Array.isArray(rows)) {
+      res.status(400).json({ error: 'Body must be an array of GL detail rows.' });
+      return;
+    }
+    const result = await previewGlDetailMerge(rows);
+    res.json(result);
+  } catch (e: any) {
+    console.error('POST /api/gl-detail/preview-merge', e);
+    res.status(500).json({ error: e?.message || 'Failed to preview merge' });
+  }
+});
+
+/**
+ * Idempotent merge. Computes tx_id for every uploaded row and runs
+ * INSERT … ON CONFLICT (tx_id) DO NOTHING. Existing rows — including
+ * ones whose matchNum is referenced by Bank Recon — are left untouched.
+ * Returns the same { inserted, skipped, total } shape as the preview.
+ */
+app.post('/api/gl-detail/merge', async (req: Request, res: Response) => {
+  if (!requirePg(res)) return;
+  try {
+    const rows = req.body as PgGlDetailRow[];
+    if (!Array.isArray(rows)) {
+      res.status(400).json({ error: 'Body must be an array of GL detail rows.' });
+      return;
+    }
+    const result = await mergeGlDetail(rows);
+    res.json(result);
+  } catch (e: any) {
+    console.error('POST /api/gl-detail/merge', e);
+    res.status(500).json({ error: e?.message || 'Failed to merge GL detail' });
   }
 });
 

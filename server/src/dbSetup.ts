@@ -139,10 +139,18 @@ CREATE TABLE IF NOT EXISTS gl_detail (
   memo        text NOT NULL DEFAULT '',
   reference   text NOT NULL DEFAULT '',
   journal     text NOT NULL DEFAULT '',
-  amount      numeric(20, 4) NOT NULL DEFAULT 0
+  amount      numeric(20, 4) NOT NULL DEFAULT 0,
+  tx_id       text
 );
 CREATE INDEX IF NOT EXISTS idx_gldetail_account ON gl_detail(account);
 CREATE INDEX IF NOT EXISTS idx_gldetail_month ON gl_detail(month_end);
+
+-- tx_id added after the table — idempotent for existing deployments. The
+-- unique index is partial so legacy rows that haven't been backfilled
+-- yet don't violate uniqueness during the rolling backfill.
+ALTER TABLE gl_detail ADD COLUMN IF NOT EXISTS tx_id text;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_gldetail_tx_id
+  ON gl_detail(tx_id) WHERE tx_id IS NOT NULL;
 `;
 
 let migrated = false;
@@ -595,8 +603,16 @@ export const saveBudget = (rows: BudgetRow[]) =>
     }
   });
 
+/**
+ * Legacy full-replace upload. Kept for cases where the user genuinely
+ * wants to wipe and rebuild (e.g. an initial demo load) — but the
+ * recommended path is mergeGlDetail. Backfills tx_id on every row it
+ * writes so the dedupe column stays correct.
+ */
 export const saveGlDetail = (rows: GlDetailRow[]) =>
   tx(async (c) => {
+    // Lazy import keeps the txId helper out of the cold-start path.
+    const { computeGlDetailTxId } = await import('./txId');
     await c.query('DELETE FROM gl_detail');
     // Use a multi-row INSERT in batches of 500 for speed with large uploads.
     const batchSize = 500;
@@ -606,20 +622,146 @@ export const saveGlDetail = (rows: GlDetailRow[]) =>
       const values: any[] = [];
       const placeholders: string[] = [];
       slice.forEach((r, i) => {
-        const base = i * 9;
+        const base = i * 10;
         placeholders.push(
-          `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9})`,
+          `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10})`,
         );
         values.push(
           r.template, r.date, r.monthEnd, r.account,
           r.description, r.memo, r.reference, r.journal, r.amount,
+          computeGlDetailTxId(r),
         );
       });
       await c.query(
         `INSERT INTO gl_detail
-           (template, date, month_end, account, description, memo, reference, journal, amount)
-         VALUES ${placeholders.join(',')}`,
+           (template, date, month_end, account, description, memo, reference, journal, amount, tx_id)
+         VALUES ${placeholders.join(',')}
+         ON CONFLICT (tx_id) DO NOTHING`,
         values,
       );
     }
   });
+
+export interface MergeResult {
+  inserted: number;
+  skipped: number;
+  total: number;
+}
+
+/**
+ * Idempotent upsert for gl_detail. Computes tx_id for each candidate row
+ * server-side and uses INSERT … ON CONFLICT (tx_id) DO NOTHING so rows
+ * already in the DB (including ones whose matchNum is referenced from
+ * Bank Recon) are left untouched. Returns counts so the UI can show
+ * "5,231 rows uploaded → 312 new, 4,919 already in GL".
+ */
+export const mergeGlDetail = async (rows: GlDetailRow[]): Promise<MergeResult> => {
+  if (!pool) throw new Error('Postgres not configured');
+  await ensureMigrated();
+  const { computeGlDetailTxId } = await import('./txId');
+
+  // Backfill tx_id on any pre-existing rows that don't have one yet so
+  // the merge below can rely on the unique index. One-shot per call —
+  // cheap because tx_id is sparse-indexed and existing-row count is
+  // bounded by what's already in the DB.
+  await pool.query(`SELECT 1 FROM gl_detail WHERE tx_id IS NULL LIMIT 1`).then(async (r) => {
+    if (r.rows.length === 0) return;
+    const legacy = await pool!.query(
+      `SELECT id, template, date, month_end, account, description, memo,
+              reference, journal, amount
+         FROM gl_detail
+        WHERE tx_id IS NULL`,
+    );
+    const client = await pool!.connect();
+    try {
+      await client.query('BEGIN');
+      for (const row of legacy.rows) {
+        const tx = computeGlDetailTxId({
+          date: row.date, monthEnd: row.month_end,
+          account: row.account, description: row.description, memo: row.memo,
+          reference: row.reference, journal: row.journal, amount: Number(row.amount),
+        });
+        await client.query(`UPDATE gl_detail SET tx_id = $1 WHERE id = $2`, [tx, row.id]);
+      }
+      await client.query('COMMIT');
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      throw e;
+    } finally {
+      client.release();
+    }
+  });
+
+  let inserted = 0;
+  const batchSize = 500;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (let off = 0; off < rows.length; off += batchSize) {
+      const slice = rows.slice(off, off + batchSize);
+      if (slice.length === 0) continue;
+      const values: any[] = [];
+      const placeholders: string[] = [];
+      slice.forEach((r, i) => {
+        const base = i * 10;
+        placeholders.push(
+          `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10})`,
+        );
+        values.push(
+          r.template, r.date, r.monthEnd, r.account,
+          r.description, r.memo, r.reference, r.journal, r.amount,
+          computeGlDetailTxId(r),
+        );
+      });
+      const result = await client.query(
+        `INSERT INTO gl_detail
+           (template, date, month_end, account, description, memo, reference, journal, amount, tx_id)
+         VALUES ${placeholders.join(',')}
+         ON CONFLICT (tx_id) DO NOTHING`,
+        values,
+      );
+      inserted += result.rowCount ?? 0;
+    }
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw e;
+  } finally {
+    client.release();
+  }
+
+  return { inserted, skipped: rows.length - inserted, total: rows.length };
+};
+
+/**
+ * Diff-only preview — no writes. Computes tx_id for each candidate and
+ * looks them up in gl_detail, returning counts the UI can use to render
+ * a confirm dialog before the user actually merges.
+ */
+export const previewGlDetailMerge = async (rows: GlDetailRow[]): Promise<MergeResult> => {
+  if (!pool) throw new Error('Postgres not configured');
+  await ensureMigrated();
+  const { computeGlDetailTxId } = await import('./txId');
+  if (rows.length === 0) return { inserted: 0, skipped: 0, total: 0 };
+
+  // Dedupe within the upload itself first — the same tx_id appearing
+  // multiple times in the source file would otherwise inflate the
+  // "new" count past what the merge would actually insert.
+  const uniqueIds = new Set<string>();
+  for (const r of rows) uniqueIds.add(computeGlDetailTxId(r));
+
+  // Batched lookup so we don't blow past Postgres's parameter cap.
+  const idArr = Array.from(uniqueIds);
+  const existing = new Set<string>();
+  const lookupBatch = 1000;
+  for (let off = 0; off < idArr.length; off += lookupBatch) {
+    const slice = idArr.slice(off, off + lookupBatch);
+    const r = await pool.query(
+      `SELECT tx_id FROM gl_detail WHERE tx_id = ANY($1::text[])`,
+      [slice],
+    );
+    for (const row of r.rows) existing.add(row.tx_id);
+  }
+  const inserted = idArr.length - existing.size;
+  return { inserted, skipped: rows.length - inserted, total: rows.length };
+};

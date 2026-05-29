@@ -123,6 +123,43 @@ export const saveGlDetail = async (rows: GlDetailRowWire[]): Promise<void> => {
   );
 };
 
+export interface GlMergeResult {
+  inserted: number;
+  skipped: number;
+  total: number;
+}
+
+/**
+ * Diff-only preview. Returns the counts the UI would see if it ran the
+ * merge — no rows are written. Use this to drive a confirm dialog.
+ */
+export const previewMergeGlDetail = async (
+  rows: GlDetailRowWire[],
+): Promise<GlMergeResult> =>
+  json<GlMergeResult>(
+    await authedFetch(url('/api/gl-detail/preview-merge'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rows),
+    }),
+  );
+
+/**
+ * Append-only upload. Each row gets a stable tx_id server-side; rows
+ * already in gl_detail (including ones bound to Bank Recon matches) are
+ * left untouched.
+ */
+export const mergeGlDetail = async (
+  rows: GlDetailRowWire[],
+): Promise<GlMergeResult> =>
+  json<GlMergeResult>(
+    await authedFetch(url('/api/gl-detail/merge'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rows),
+    }),
+  );
+
 export interface BankMappingWire {
   account: string;
   bank: string;

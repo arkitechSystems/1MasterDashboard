@@ -3919,6 +3919,14 @@ const Admin: React.FC = () => {
     | { state: 'ready'; filename: string; sheet: string; rows: number }
     | { state: 'error'; filename: string; message: string }
   >({ state: 'idle' });
+  // Result of the last merge against gl_detail — drives the inline
+  // "X new, Y already in GL" banner so the user can see what landed.
+  const [glMergeResult, setGlMergeResult] = useState<
+    | { state: 'idle' }
+    | { state: 'merging' }
+    | { state: 'done'; inserted: number; skipped: number; total: number }
+    | { state: 'error'; message: string }
+  >({ state: 'idle' });
   const [glDetail, setGlDetail] = useState<{
     filename: string;
     sheet: string;
@@ -4535,6 +4543,51 @@ const Admin: React.FC = () => {
           </div>
         </div>
 
+        {glDetail && glMergeResult.state !== 'idle' && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '10px 14px',
+              borderRadius: 6,
+              fontSize: 13,
+              background:
+                glMergeResult.state === 'done' ? '#e8f8f4'
+                : glMergeResult.state === 'error' ? '#fdecea'
+                : '#f4f7fb',
+              border: `1px solid ${
+                glMergeResult.state === 'done' ? '#1abc9c'
+                : glMergeResult.state === 'error' ? '#e74c3c'
+                : '#e5ebf2'
+              }`,
+              color:
+                glMergeResult.state === 'error' ? '#b91c1c'
+                : '#1a2533',
+            }}
+          >
+            {glMergeResult.state === 'merging' && (
+              <>
+                <strong>Merging into GL…</strong> Rows already in the database
+                will be skipped so Bank Recon match numbers aren't disturbed.
+              </>
+            )}
+            {glMergeResult.state === 'done' && (
+              <>
+                <strong>Merge complete.</strong>{' '}
+                {glMergeResult.total.toLocaleString()} row
+                {glMergeResult.total === 1 ? '' : 's'} uploaded →{' '}
+                <strong>{glMergeResult.inserted.toLocaleString()} new</strong>,{' '}
+                {glMergeResult.skipped.toLocaleString()} already in GL (Bank
+                Recon match numbers preserved).
+              </>
+            )}
+            {glMergeResult.state === 'error' && (
+              <>
+                <strong>Merge failed:</strong> {glMergeResult.message}
+              </>
+            )}
+          </div>
+        )}
+
         {glDetail && (
           <div className="gl-detail-section">
             <div className="gl-detail-head">
@@ -4557,6 +4610,7 @@ const Admin: React.FC = () => {
                 onClick={() => {
                   setGlDetail(null);
                   setGlStatus({ state: 'idle' });
+                  setGlMergeResult({ state: 'idle' });
                 }}
               >
                 <Icon name="close" />
@@ -4682,10 +4736,13 @@ const Admin: React.FC = () => {
                 rows: kept,
               });
               setGlPending(null);
-              // Fire-and-forget persistence — succeed locally even if backend is down.
-              if (persist.state !== 'unavailable') {
+              // Merge into gl_detail server-side. The merge is idempotent —
+              // rows whose tx_id already exists are skipped, so we don't
+              // wipe out Bank Recon's matchNum bindings.
+              if (persist.state !== 'unavailable' && kept.length > 0) {
+                setGlMergeResult({ state: 'merging' });
                 setupApi
-                  .saveGlDetail(
+                  .mergeGlDetail(
                     kept.map((r) => ({
                       template: r.template,
                       date: r.date,
@@ -4698,9 +4755,21 @@ const Admin: React.FC = () => {
                       amount: r.amount,
                     })),
                   )
-                  .catch((e) =>
-                    console.warn('[saveGlDetail] backend write failed:', e?.message),
-                  );
+                  .then((result) => {
+                    setGlMergeResult({
+                      state: 'done',
+                      inserted: result.inserted,
+                      skipped: result.skipped,
+                      total: result.total,
+                    });
+                  })
+                  .catch((e) => {
+                    console.warn('[mergeGlDetail] backend write failed:', e?.message);
+                    setGlMergeResult({
+                      state: 'error',
+                      message: e?.message || 'Merge failed',
+                    });
+                  });
               }
             }}
           />
